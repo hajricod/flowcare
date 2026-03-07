@@ -2,47 +2,43 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasUuids, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+    public const ROLE_ADMIN = 'ADMIN';
+    public const ROLE_BRANCH_MANAGER = 'BRANCH_MANAGER';
+    public const ROLE_STAFF = 'STAFF';
+    public const ROLE_CUSTOMER = 'CUSTOMER';
+
     protected $fillable = [
-        'name',
-        'email',
-        'password',
+        'id', 'username', 'email', 'password', 'full_name', 'phone',
+        'role', 'branch_id', 'id_image_path', 'is_active',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    protected $hidden = ['password', 'remember_token'];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
     }
+
+    public function isAdmin(): bool { return $this->role === self::ROLE_ADMIN; }
+    public function isBranchManager(): bool { return $this->role === self::ROLE_BRANCH_MANAGER; }
+    public function isStaff(): bool { return $this->role === self::ROLE_STAFF; }
+    public function isCustomer(): bool { return $this->role === self::ROLE_CUSTOMER; }
+
+    public function branch(): BelongsTo { return $this->belongsTo(Branch::class); }
+    public function appointments(): HasMany { return $this->hasMany(Appointment::class, 'customer_id'); }
+    public function staffServiceTypes(): HasMany { return $this->hasMany(StaffServiceType::class, 'staff_id'); }
+    public function slots(): HasMany { return $this->hasMany(Slot::class, 'staff_id'); }
 }
