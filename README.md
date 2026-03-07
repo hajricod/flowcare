@@ -32,7 +32,7 @@ A RESTful API backend built with **Laravel 12** (PHP 8.3) and **PostgreSQL** for
 
 ```bash
 git clone <repo-url>
-cd flow-care
+cd flowcare
 cp .env.example .env
 php artisan key:generate
 ```
