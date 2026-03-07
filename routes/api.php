@@ -1,16 +1,16 @@
 <?php
 
-use App\Http\Controllers\AppointmentController;
-use App\Http\Controllers\AuditLogController;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\BranchController;
-use App\Http\Controllers\CustomerController;
-use App\Http\Controllers\ManageAppointmentController;
-use App\Http\Controllers\QueueController;
-use App\Http\Controllers\ServiceTypeController;
-use App\Http\Controllers\SettingController;
-use App\Http\Controllers\SlotController;
-use App\Http\Controllers\StaffController;
+use App\Http\Controllers\Api\AppointmentController;
+use App\Http\Controllers\Api\AuditLogController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BranchController;
+use App\Http\Controllers\Api\CustomerController;
+use App\Http\Controllers\Api\ManageAppointmentController;
+use App\Http\Controllers\Api\QueueController;
+use App\Http\Controllers\Api\ServiceTypeController;
+use App\Http\Controllers\Api\SettingController;
+use App\Http\Controllers\Api\SlotController;
+use App\Http\Controllers\Api\StaffController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes (no auth)

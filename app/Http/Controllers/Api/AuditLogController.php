@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use Illuminate\Http\Request;
 
@@ -16,9 +17,10 @@ class AuditLogController extends Controller
             $query->where('branch_id', $user->branch_id);
         }
 
-        $perPage = (int) $request->get('size', 15);
+        $perPage = (int) $request->query('size', 15);
+        $page = (int) $request->query('page', 1);
         $results = $query->orderBy('created_at', 'desc')
-            ->paginate($perPage, ['*'], 'page', $request->get('page', 1));
+            ->paginate($perPage, ['*'], 'page', $page);
         return response()->json(['data' => $results->items(), 'total' => $results->total()]);
     }
 
