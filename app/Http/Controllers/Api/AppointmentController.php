@@ -67,10 +67,10 @@ class AppointmentController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $perPage = (int) $request->get('size', 15);
+        $perPage = (int) $request->query('size', 15);
         $results = Appointment::where('customer_id', $user->id)
             ->with(['slot', 'serviceType', 'branch', 'staff'])
-            ->paginate($perPage, ['*'], 'page', $request->get('page', 1));
+            ->paginate($perPage, ['*'], 'page', $request->query('page', 1));
         return response()->json(['data' => $results->items(), 'total' => $results->total()]);
     }
 
