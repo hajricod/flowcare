@@ -19,7 +19,7 @@ class AuthController extends Controller
             'password' => 'required|string|min:6',
             'full_name' => 'required|string',
             'phone' => 'nullable|string',
-            'id_image' => 'nullable|image|max:5120',
+            'id_image' => 'required|image|max:5120',
         ]);
 
         $idImagePath = null;
