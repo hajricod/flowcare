@@ -12,6 +12,20 @@ use Illuminate\Support\Str;
 
 class AppointmentController extends Controller
 {
+    /**
+     * Create a new appointment for the authenticated customer.
+     *
+     * Endpoint: POST /api/appointments
+     * Auth: CUSTOMER
+     *
+     * Validates slot availability, assigns a branch queue number for the day,
+     * optionally stores an attachment, and returns the created appointment with
+     * related slot, service type, branch, and staff details.
+     *
+     * Responses:
+     * - 201: Appointment created
+     * - 422: Validation failed or slot is already full
+     */
     public function store(Request $request)
     {
         $user = $request->user();
@@ -64,6 +78,19 @@ class AppointmentController extends Controller
         return response()->json(['data' => $appointment->load(['slot', 'serviceType', 'branch', 'staff'])], 201);
     }
 
+    /**
+     * List appointments for the authenticated customer.
+     *
+     * Endpoint: GET /api/appointments
+     * Auth: CUSTOMER
+     *
+     * Supports pagination with query parameters:
+     * - page (default: 1)
+     * - size (default: 15)
+     *
+     * Responses:
+     * - 200: Paginated appointment list with total count
+     */
     public function index(Request $request)
     {
         $user = $request->user();
@@ -74,6 +101,19 @@ class AppointmentController extends Controller
         return response()->json(['data' => $results->items(), 'total' => $results->total()]);
     }
 
+    /**
+     * Get details of a single customer appointment.
+     *
+     * Endpoint: GET /api/appointments/{id}
+     * Auth: CUSTOMER
+     *
+     * Returns appointment details and related entities. When an attachment exists,
+     * an `attachment_url` field is included for downloading it.
+     *
+     * Responses:
+     * - 200: Appointment found
+     * - 404: Appointment not found for the authenticated customer
+     */
     public function show(Request $request, string $id)
     {
         $user = $request->user();
@@ -88,6 +128,20 @@ class AppointmentController extends Controller
         return response()->json(['data' => $data]);
     }
 
+    /**
+     * Cancel a customer appointment.
+     *
+     * Endpoint: DELETE /api/appointments/{id}
+     * Auth: CUSTOMER
+     *
+     * Only appointments in BOOKED or CHECKED_IN status can be cancelled.
+     * Cancellation is recorded in the audit log.
+     *
+     * Responses:
+     * - 200: Appointment cancelled
+     * - 422: Appointment cannot be cancelled in current status
+     * - 404: Appointment not found for the authenticated customer
+     */
     public function cancel(Request $request, string $id)
     {
         $user = $request->user();
@@ -103,6 +157,23 @@ class AppointmentController extends Controller
         return response()->json(['data' => $appointment]);
     }
 
+    /**
+     * Reschedule a customer appointment to a new slot.
+     *
+     * Endpoint: PUT /api/appointments/{id}/reschedule
+     * Auth: CUSTOMER
+     *
+     * Request body:
+     * - new_slot_id (required)
+     *
+     * Validates that the new slot exists and is not fully booked, then updates
+     * slot, staff, branch, and service type references on the appointment.
+     *
+     * Responses:
+     * - 200: Appointment rescheduled
+     * - 422: Validation failed or new slot is fully booked
+     * - 404: Appointment not found for the authenticated customer
+     */
     public function reschedule(Request $request, string $id)
     {
         $user = $request->user();
@@ -130,6 +201,21 @@ class AppointmentController extends Controller
         return response()->json(['data' => $appointment->fresh()->load(['slot', 'serviceType', 'branch', 'staff'])]);
     }
 
+    /**
+     * Download an appointment attachment.
+     *
+     * Endpoint: GET /api/appointments/{id}/attachment
+     * Auth: CUSTOMER, STAFF, BRANCH_MANAGER, ADMIN
+     *
+     * Access rules:
+     * - Customer can download only their own appointment attachment
+     * - Staff/Manager/Admin can download based on route role access
+     *
+     * Responses:
+     * - 200: File download
+     * - 403: Customer is not owner of the appointment
+     * - 404: Appointment or attachment not found
+     */
     public function getAttachment(Request $request, string $id)
     {
         $user = $request->user();
