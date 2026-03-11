@@ -9,6 +9,18 @@ use Illuminate\Http\Request;
 
 class ManageAppointmentController extends Controller
 {
+    /**
+     * List appointments for operational staff views.
+     *
+     * Endpoint: GET /api/manage/appointments
+     * Auth: STAFF, BRANCH_MANAGER, ADMIN
+     *
+     * Branch managers are limited to their branch; staff are limited to their own
+     * assigned appointments. Supports optional `status` filtering and pagination.
+     *
+     * Responses:
+     * - 200: Paginated managed appointment list
+     */
     public function index(Request $request)
     {
         $user = $request->user();
@@ -29,6 +41,21 @@ class ManageAppointmentController extends Controller
         return response()->json(['data' => $results->items(), 'total' => $results->total()]);
     }
 
+    /**
+     * Update appointment status by staff/manager/admin.
+     *
+     * Endpoint: PUT /api/manage/appointments/{id}/status
+     * Auth: STAFF, BRANCH_MANAGER, ADMIN
+     *
+     * Allowed statuses: CHECKED_IN, COMPLETED, NO_SHOW.
+     * Enforces branch/staff ownership scope and writes an audit log entry.
+     *
+     * Responses:
+     * - 200: Appointment status updated
+     * - 403: Forbidden by role scope rules
+     * - 404: Appointment not found
+     * - 422: Validation failed
+     */
     public function updateStatus(Request $request, string $id)
     {
         $user = $request->user();

@@ -41,6 +41,17 @@ class SlotController extends Controller
     }
 
     /**
+     * List available slots for a branch service.
+     *
+     * Endpoint: GET /api/branches/{branch}/services/{service}/slots
+     * Auth: Public
+     *
+     * Returns active slots not already reserved by BOOKED or CHECKED_IN
+     * appointments. Supports optional `date` filter and pagination.
+     *
+     * Responses:
+     * - 200: Paginated available slot list
+     *
      * @unauthenticated
      */
     public function available(Request $request, string $branchId, string $serviceId)
@@ -60,6 +71,21 @@ class SlotController extends Controller
         return response()->json(['data' => $results->items(), 'total' => $results->total()]);
     }
 
+    /**
+     * Create one or more appointment slots.
+     *
+     * Endpoint: POST /api/manage/slots
+     * Auth: BRANCH_MANAGER, ADMIN
+     *
+     * Accepts either a single slot payload or a `slots` array for bulk creation.
+     * Validates branch/service/staff relationships, enforces manager branch scope,
+     * and records slot creation in the audit log.
+     *
+     * Responses:
+     * - 201: Slot(s) created
+     * - 403: Forbidden by branch scope rules
+     * - 422: Validation or relationship constraints failed
+     */
     public function store(Request $request)
     {
         $user = $request->user();
@@ -125,6 +151,21 @@ class SlotController extends Controller
         return response()->json(['data' => $slot], 201);
     }
 
+    /**
+     * Update an existing slot.
+     *
+     * Endpoint: PUT /api/manage/slots/{id}
+     * Auth: BRANCH_MANAGER, ADMIN
+     *
+     * Applies partial updates, validates cross-entity consistency, and enforces
+     * manager branch scope restrictions.
+     *
+     * Responses:
+     * - 200: Slot updated
+     * - 403: Forbidden by branch scope rules
+     * - 404: Slot not found
+     * - 422: Validation or relationship constraints failed
+     */
     public function update(Request $request, string $id)
     {
         $user = $request->user();
@@ -166,6 +207,19 @@ class SlotController extends Controller
         return response()->json(['data' => $slot]);
     }
 
+    /**
+     * Soft-delete a slot.
+     *
+     * Endpoint: DELETE /api/manage/slots/{id}
+     * Auth: BRANCH_MANAGER, ADMIN
+     *
+     * Enforces manager branch scope and records deletion in the audit log.
+     *
+     * Responses:
+     * - 200: Slot soft-deleted
+     * - 403: Forbidden by branch scope rules
+     * - 404: Slot not found
+     */
     public function destroy(Request $request, string $id)
     {
         $user = $request->user();
@@ -180,6 +234,18 @@ class SlotController extends Controller
         return response()->json(['message' => 'Slot soft-deleted.']);
     }
 
+    /**
+     * Permanently remove soft-deleted slots after retention period.
+     *
+     * Endpoint: POST /api/admin/slots/cleanup
+     * Auth: ADMIN
+     *
+     * Hard-deletes slots past configured retention and detaches related
+     * appointments by setting `slot_id` to null.
+     *
+     * Responses:
+     * - 200: Cleanup summary returned
+     */
     public function cleanup(Request $request)
     {
         $user = $request->user();

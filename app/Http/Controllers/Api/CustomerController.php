@@ -9,6 +9,18 @@ use Illuminate\Support\Facades\Storage;
 
 class CustomerController extends Controller
 {
+    /**
+     * List customers for management.
+     *
+     * Endpoint: GET /api/manage/customers
+     * Auth: BRANCH_MANAGER, ADMIN
+     *
+     * Supports optional `term` search across name, email, and username, with
+     * pagination.
+     *
+     * Responses:
+     * - 200: Paginated customer list
+     */
     public function index(Request $request)
     {
         $query = User::where('role', 'CUSTOMER');
@@ -27,12 +39,32 @@ class CustomerController extends Controller
         return response()->json(['data' => $results->items(), 'total' => $results->total()]);
     }
 
+    /**
+     * Get a single customer profile.
+     *
+     * Endpoint: GET /api/manage/customers/{id}
+     * Auth: BRANCH_MANAGER, ADMIN
+     *
+     * Responses:
+     * - 200: Customer found
+     * - 404: Customer not found
+     */
     public function show(string $id)
     {
         $customer = User::where('role', 'CUSTOMER')->findOrFail($id);
         return response()->json(['data' => $customer]);
     }
 
+    /**
+     * Download customer ID image.
+     *
+     * Endpoint: GET /api/admin/customers/{id}/id-image
+     * Auth: ADMIN
+     *
+     * Responses:
+     * - 200: File download
+     * - 404: Customer or ID image not found
+     */
     public function getIdImage(string $id)
     {
         $customer = User::where('role', 'CUSTOMER')->findOrFail($id);

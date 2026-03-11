@@ -10,6 +10,17 @@ use Illuminate\Http\Request;
 class ServiceTypeController extends Controller
 {
     /**
+    * List active service types for a specific active branch.
+    *
+    * Endpoint: GET /api/branches/{branch}/services
+    * Auth: Public
+    *
+    * Supports pagination with `page` and `size` query parameters.
+    *
+    * Responses:
+    * - 200: Paginated service type list
+    * - 404: Branch not found or inactive
+    *
      * @unauthenticated
      */
     public function byBranch(Request $request, string $branchId)

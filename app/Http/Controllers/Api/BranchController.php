@@ -11,10 +11,15 @@ class BranchController extends Controller
 {
     #[QueryParameter('term', description: 'Search branch name or city (case-insensitive).', type: 'string', required: false, example: 'muscat')]
     /**
-    * List active branches.
+    * List active branches with optional search.
     *
-    * Search and list active branches with pagination.
-    * Supports searching by branch name or city using the `term` query parameter.
+    * Endpoint: GET /api/branches
+    * Auth: Public
+    *
+    * Supports pagination and optional `term` filtering by branch name or city.
+    *
+    * Responses:
+    * - 200: Paginated list of active branches
     *
     * @unauthenticated
      */

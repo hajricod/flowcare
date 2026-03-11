@@ -11,6 +11,18 @@ use Illuminate\Http\Request;
 
 class StaffController extends Controller
 {
+    /**
+     * List staff and branch managers.
+     *
+     * Endpoint: GET /api/manage/staff
+     * Auth: BRANCH_MANAGER, ADMIN
+     *
+     * Branch managers are scoped to their branch. Supports optional `term`
+     * filtering and pagination.
+     *
+     * Responses:
+     * - 200: Paginated staff list with assigned service types
+     */
     public function index(Request $request)
     {
         $user = $request->user();
@@ -32,6 +44,21 @@ class StaffController extends Controller
         return response()->json(['data' => $results->items(), 'total' => $results->total()]);
     }
 
+    /**
+     * Assign branch and/or service types to a staff user.
+     *
+     * Endpoint: PUT /api/manage/staff/{id}/assign
+     * Auth: BRANCH_MANAGER, ADMIN
+     *
+     * Branch managers can only assign within their own branch and to service
+     * types that belong to that branch.
+     *
+     * Responses:
+     * - 200: Assignment updated
+     * - 403: Forbidden by branch scope rules
+     * - 404: Staff not found
+     * - 422: Validation failed
+     */
     public function assign(Request $request, string $id)
     {
         $user = $request->user();

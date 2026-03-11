@@ -9,6 +9,17 @@ use App\Models\Branch;
 class QueueController extends Controller
 {
     /**
+    * Get today's active queue count for a branch.
+    *
+    * Endpoint: GET /api/branches/{branch}/queue
+    * Auth: Public
+    *
+    * Counts appointments in BOOKED or CHECKED_IN status created today.
+    *
+    * Responses:
+    * - 200: Branch queue count returned
+    * - 404: Branch not found
+    *
      * @unauthenticated
      */
     public function liveQueue(string $branchId)

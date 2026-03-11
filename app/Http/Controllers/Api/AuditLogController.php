@@ -8,6 +8,18 @@ use Illuminate\Http\Request;
 
 class AuditLogController extends Controller
 {
+    /**
+     * List audit logs.
+     *
+     * Endpoints:
+     * - GET /api/manage/audit-logs (STAFF, BRANCH_MANAGER, ADMIN)
+     * - GET /api/admin/audit-logs (ADMIN)
+     *
+     * Branch managers are limited to their branch logs. Supports pagination.
+     *
+     * Responses:
+     * - 200: Paginated audit log list
+     */
     public function index(Request $request)
     {
         $user = $request->user();
@@ -24,6 +36,18 @@ class AuditLogController extends Controller
         return response()->json(['data' => $results->items(), 'total' => $results->total()]);
     }
 
+    /**
+     * Export audit logs as CSV.
+     *
+     * Endpoint: GET /api/admin/audit-logs/export
+     * Auth: ADMIN
+     *
+     * Streams logs in descending creation order as a downloadable CSV file.
+     * Branch managers remain scoped to their own branch if invoked in that role.
+     *
+     * Responses:
+     * - 200: CSV stream download
+     */
     public function export(Request $request)
     {
         $user = $request->user();

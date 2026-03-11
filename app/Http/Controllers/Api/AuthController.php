@@ -12,6 +12,18 @@ use Illuminate\Support\Str;
 class AuthController extends Controller
 {
     /**
+    * Register a new customer account.
+    *
+    * Endpoint: POST /api/auth/register
+    * Auth: Public
+    *
+    * Validates customer details, stores an uploaded ID image, creates a CUSTOMER
+    * user, and records the registration in the audit log.
+    *
+    * Responses:
+    * - 201: Customer account created
+    * - 422: Validation failed
+    *
      * @unauthenticated
      */
     public function register(Request $request)
@@ -49,12 +61,32 @@ class AuthController extends Controller
         return response()->json(['data' => $user], 201);
     }
 
+    /**
+     * Log in using basic authentication middleware context.
+     *
+     * Endpoint: POST /api/auth/login
+     * Auth: Basic auth required
+     *
+     * Returns the authenticated user resolved by middleware.
+     *
+     * Responses:
+     * - 200: Authenticated user returned
+     */
     public function login(Request $request)
     {
         $user = $request->user();
         return response()->json(['data' => $user]);
     }
 
+    /**
+     * Return the currently authenticated user profile.
+     *
+     * Endpoint: GET /api/auth/me
+     * Auth: Basic auth required
+     *
+     * Responses:
+     * - 200: Authenticated user returned
+     */
     public function me(Request $request)
     {
         return response()->json(['data' => $request->user()]);
