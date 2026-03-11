@@ -33,11 +33,20 @@ class ManageAppointmentController extends Controller
     {
         $user = $request->user();
         $validated = $request->validate([
-            'status' => 'required|in:CHECKED_IN,COMPLETED,CANCELLED,NO_SHOW',
+            'status' => 'required|in:CHECKED_IN,COMPLETED,NO_SHOW',
             'notes' => 'nullable|string',
         ]);
 
         $appointment = Appointment::findOrFail($id);
+
+        if ($user->isBranchManager() && $appointment->branch_id !== $user->branch_id) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        if ($user->isStaff() && $appointment->staff_id !== $user->id) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
         $appointment->update($validated);
 
         AuditLog::log($user->id, $user->role, 'APPOINTMENT_STATUS_UPDATED', 'APPOINTMENT', $appointment->id, ['status' => $validated['status']], $appointment->branch_id);
