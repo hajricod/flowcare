@@ -81,7 +81,7 @@ Default seeded credentials:
 | GET | `/api/branches/{id}/services` | List services for branch |
 | GET | `/api/branches/{id}/services/{svcId}/slots` | List available slots |
 | GET | `/api/branches/{id}/queue` | Live queue count |
-| POST | `/api/auth/register` | Register new customer |
+| POST | `/api/auth/register` | Register new customer (ID image required) |
 
 ### Auth Required
 
@@ -120,7 +120,12 @@ Default seeded credentials:
 | PUT | `/api/manage/staff/{id}/assign` | Assign staff to branch/services |
 | GET | `/api/manage/customers` | List customers |
 | GET | `/api/manage/customers/{id}` | Get customer detail |
-| GET | `/api/manage/customers/{id}/id-image` | Download customer ID image |
+
+### Admin File Access
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/admin/customers/{id}/id-image` | Download customer ID image |
 
 ### Admin Only Endpoints
 
