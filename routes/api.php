@@ -53,13 +53,13 @@ Route::middleware('auth.basic.custom')->group(function () {
         Route::put('/manage/staff/{id}/assign', [StaffController::class, 'assign']);
         Route::get('/manage/customers', [CustomerController::class, 'index']);
         Route::get('/manage/customers/{id}', [CustomerController::class, 'show']);
-        Route::get('/manage/customers/{id}/id-image', [CustomerController::class, 'getIdImage']);
     });
 
     // Admin only routes
     Route::middleware('role:ADMIN')->group(function () {
         Route::get('/admin/audit-logs', [AuditLogController::class, 'index']);
         Route::get('/admin/audit-logs/export', [AuditLogController::class, 'export']);
+        Route::get('/admin/customers/{id}/id-image', [CustomerController::class, 'getIdImage']);
         Route::put('/admin/settings/retention', [SettingController::class, 'updateRetention']);
         Route::post('/admin/slots/cleanup', [SlotController::class, 'cleanup']);
     });
