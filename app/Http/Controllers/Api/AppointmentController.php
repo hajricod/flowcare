@@ -26,7 +26,7 @@ class AppointmentController extends Controller
         $existingCount = Appointment::where('slot_id', $slot->id)
             ->whereIn('status', ['BOOKED', 'CHECKED_IN'])
             ->count();
-        if ($existingCount >= $slot->capacity) {
+        if ($existingCount >= 1) {
             return response()->json(['message' => 'Slot is fully booked.'], 422);
         }
 
@@ -114,7 +114,7 @@ class AppointmentController extends Controller
         $existingCount = Appointment::where('slot_id', $newSlot->id)
             ->whereIn('status', ['BOOKED', 'CHECKED_IN'])
             ->count();
-        if ($existingCount >= $newSlot->capacity) {
+        if ($existingCount >= 1) {
             return response()->json(['message' => 'New slot is fully booked.'], 422);
         }
 
