@@ -5,13 +5,41 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Appointment;
+use App\Models\ServiceType;
 use App\Models\Setting;
 use App\Models\Slot;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
 class SlotController extends Controller
 {
+    private function assertManagerBranchScope($user, string $branchId): ?\Illuminate\Http\JsonResponse
+    {
+        if ($user->isBranchManager() && $user->branch_id !== $branchId) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        return null;
+    }
+
+    private function assertSlotRelations(string $branchId, string $serviceTypeId, ?string $staffId): ?\Illuminate\Http\JsonResponse
+    {
+        $service = ServiceType::find($serviceTypeId);
+        if (!$service || $service->branch_id !== $branchId) {
+            return response()->json(['message' => 'Service type must belong to the selected branch.'], 422);
+        }
+
+        if ($staffId) {
+            $staff = User::find($staffId);
+            if (!$staff || !$staff->isStaff() || $staff->branch_id !== $branchId) {
+                return response()->json(['message' => 'Staff must belong to the selected branch.'], 422);
+            }
+        }
+
+        return null;
+    }
+
     public function available(Request $request, string $branchId, string $serviceId)
     {
         $query = Slot::where('branch_id', $branchId)
@@ -41,10 +69,23 @@ class SlotController extends Controller
                 'slots.*.staff_id' => 'nullable|exists:users,id',
                 'slots.*.start_at' => 'required|date',
                 'slots.*.end_at' => 'required|date',
-                'slots.*.capacity' => 'nullable|integer|min:1',
+                'slots.*.capacity' => 'nullable|integer|in:1',
             ]);
             $created = [];
             foreach ($request->slots as $slotData) {
+                if ($forbidden = $this->assertManagerBranchScope($user, $slotData['branch_id'])) {
+                    return $forbidden;
+                }
+
+                if ($invalidRelations = $this->assertSlotRelations(
+                    $slotData['branch_id'],
+                    $slotData['service_type_id'],
+                    $slotData['staff_id'] ?? null
+                )) {
+                    return $invalidRelations;
+                }
+
+                $slotData['capacity'] = 1;
                 $slot = Slot::create($slotData);
                 AuditLog::log($user->id, $user->role, 'SLOT_CREATED', 'SLOT', $slot->id, null, $slot->branch_id);
                 $created[] = $slot;
@@ -58,8 +99,22 @@ class SlotController extends Controller
             'staff_id' => 'nullable|exists:users,id',
             'start_at' => 'required|date',
             'end_at' => 'required|date|after:start_at',
-            'capacity' => 'nullable|integer|min:1',
+            'capacity' => 'nullable|integer|in:1',
         ]);
+
+        if ($forbidden = $this->assertManagerBranchScope($user, $validated['branch_id'])) {
+            return $forbidden;
+        }
+
+        if ($invalidRelations = $this->assertSlotRelations(
+            $validated['branch_id'],
+            $validated['service_type_id'],
+            $validated['staff_id'] ?? null
+        )) {
+            return $invalidRelations;
+        }
+
+        $validated['capacity'] = 1;
 
         $slot = Slot::create($validated);
         AuditLog::log($user->id, $user->role, 'SLOT_CREATED', 'SLOT', $slot->id, null, $slot->branch_id);
@@ -72,15 +127,35 @@ class SlotController extends Controller
         $user = $request->user();
         $slot = Slot::findOrFail($id);
 
+        if ($forbidden = $this->assertManagerBranchScope($user, $slot->branch_id)) {
+            return $forbidden;
+        }
+
         $validated = $request->validate([
             'branch_id' => 'sometimes|exists:branches,id',
             'service_type_id' => 'sometimes|exists:service_types,id',
             'staff_id' => 'sometimes|nullable|exists:users,id',
             'start_at' => 'sometimes|date',
             'end_at' => 'sometimes|date',
-            'capacity' => 'sometimes|integer|min:1',
+            'capacity' => 'sometimes|integer|in:1',
             'is_active' => 'sometimes|boolean',
         ]);
+
+        if (isset($validated['branch_id']) && ($forbidden = $this->assertManagerBranchScope($user, $validated['branch_id']))) {
+            return $forbidden;
+        }
+
+        $targetBranchId = $validated['branch_id'] ?? $slot->branch_id;
+        $targetServiceTypeId = $validated['service_type_id'] ?? $slot->service_type_id;
+        $targetStaffId = array_key_exists('staff_id', $validated) ? $validated['staff_id'] : $slot->staff_id;
+
+        if ($invalidRelations = $this->assertSlotRelations($targetBranchId, $targetServiceTypeId, $targetStaffId)) {
+            return $invalidRelations;
+        }
+
+        if (isset($validated['capacity'])) {
+            $validated['capacity'] = 1;
+        }
 
         $slot->update($validated);
         AuditLog::log($user->id, $user->role, 'SLOT_UPDATED', 'SLOT', $slot->id, null, $slot->branch_id);
@@ -92,6 +167,11 @@ class SlotController extends Controller
     {
         $user = $request->user();
         $slot = Slot::findOrFail($id);
+
+        if ($forbidden = $this->assertManagerBranchScope($user, $slot->branch_id)) {
+            return $forbidden;
+        }
+
         $slot->delete();
         AuditLog::log($user->id, $user->role, 'SLOT_DELETED', 'SLOT', $slot->id, null, $slot->branch_id);
         return response()->json(['message' => 'Slot soft-deleted.']);
