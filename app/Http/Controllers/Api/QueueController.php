@@ -8,6 +8,9 @@ use App\Models\Branch;
 
 class QueueController extends Controller
 {
+    /**
+     * @unauthenticated
+     */
     public function liveQueue(string $branchId)
     {
         $branch = Branch::findOrFail($branchId);

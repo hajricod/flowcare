@@ -4,10 +4,20 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\Request;
 
 class BranchController extends Controller
 {
+    #[QueryParameter('term', description: 'Search branch name or city (case-insensitive).', type: 'string', required: false, example: 'muscat')]
+    /**
+    * List active branches.
+    *
+    * Search and list active branches with pagination.
+    * Supports searching by branch name or city using the `term` query parameter.
+    *
+    * @unauthenticated
+     */
     public function index(Request $request)
     {
         $query = Branch::where('is_active', true);

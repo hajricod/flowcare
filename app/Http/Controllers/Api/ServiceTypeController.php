@@ -9,6 +9,9 @@ use Illuminate\Http\Request;
 
 class ServiceTypeController extends Controller
 {
+    /**
+     * @unauthenticated
+     */
     public function byBranch(Request $request, string $branchId)
     {
         $branch = Branch::where('is_active', true)->findOrFail($branchId);

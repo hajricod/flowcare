@@ -71,6 +71,57 @@ Default seeded credentials:
 | STAFF | `staff_muscat_1` | `staff123` |
 | CUSTOMER | `customer_1` | `customer123` |
 
+## API Documentation (Scramble)
+
+This project uses [`dedoc/scramble`](https://github.com/dedoc/scramble) for OpenAPI documentation and interactive endpoint testing.
+
+### Open docs UI
+
+- URL: `/docs/api`
+- OpenAPI JSON: `/docs/api.json`
+
+When running locally via Sail, open:
+
+- `http://localhost/docs/api`
+- `http://localhost/docs/api.json`
+
+### Test endpoints with Try It
+
+1. Open `/docs/api`.
+2. Expand any endpoint and click `Try It`.
+3. For protected endpoints, add header:
+	`Authorization: Basic base64(username:password)`
+
+Example:
+
+```bash
+echo -n 'admin:admin123' | base64
+```
+
+Then use:
+
+```text
+Authorization: Basic <encoded-value>
+```
+
+### Export OpenAPI file
+
+```bash
+./vendor/bin/sail artisan scramble:export
+```
+
+Optional custom output path:
+
+```bash
+./vendor/bin/sail artisan scramble:export --path=storage/app/public/openapi.json
+```
+
+### Analyze docs generation
+
+```bash
+./vendor/bin/sail artisan scramble:analyze
+```
+
 ## API Endpoints
 
 ### Public (no auth required)

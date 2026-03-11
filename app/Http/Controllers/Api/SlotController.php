@@ -40,6 +40,9 @@ class SlotController extends Controller
         return null;
     }
 
+    /**
+     * @unauthenticated
+     */
     public function available(Request $request, string $branchId, string $serviceId)
     {
         $query = Slot::where('branch_id', $branchId)

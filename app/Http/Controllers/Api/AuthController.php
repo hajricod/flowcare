@@ -11,6 +11,9 @@ use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
+    /**
+     * @unauthenticated
+     */
     public function register(Request $request)
     {
         $validated = $request->validate([
