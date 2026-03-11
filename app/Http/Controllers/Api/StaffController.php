@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Models\ServiceType;
 use App\Models\StaffServiceType;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -36,6 +37,10 @@ class StaffController extends Controller
         $user = $request->user();
         $staff = User::findOrFail($id);
 
+        if ($user->isBranchManager() && $staff->branch_id !== $user->branch_id) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
         $validated = $request->validate([
             'branch_id' => 'nullable|exists:branches,id',
             'service_type_ids' => 'nullable|array',
@@ -43,10 +48,23 @@ class StaffController extends Controller
         ]);
 
         if (isset($validated['branch_id'])) {
+            if ($user->isBranchManager() && $validated['branch_id'] !== $user->branch_id) {
+                return response()->json(['message' => 'Forbidden.'], 403);
+            }
             $staff->update(['branch_id' => $validated['branch_id']]);
         }
 
         if (isset($validated['service_type_ids'])) {
+            if ($user->isBranchManager()) {
+                $count = ServiceType::whereIn('id', $validated['service_type_ids'])
+                    ->where('branch_id', $user->branch_id)
+                    ->count();
+
+                if ($count !== count($validated['service_type_ids'])) {
+                    return response()->json(['message' => 'Forbidden.'], 403);
+                }
+            }
+
             StaffServiceType::where('staff_id', $staff->id)->delete();
             foreach ($validated['service_type_ids'] as $svcId) {
                 StaffServiceType::firstOrCreate(['staff_id' => $staff->id, 'service_type_id' => $svcId]);
