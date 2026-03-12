@@ -41,7 +41,7 @@ Route::middleware('auth.basic.custom')->group(function () {
     Route::middleware('role:STAFF,BRANCH_MANAGER,ADMIN')->group(function () {
         Route::get('/manage/appointments', [ManageAppointmentController::class, 'index']);
         Route::put('/manage/appointments/{id}/status', [ManageAppointmentController::class, 'updateStatus']);
-        Route::get('/manage/audit-logs', [AuditLogController::class, 'index']);
+        Route::get('/manage/audit-logs', [AuditLogController::class, 'manageIndex']);
     });
 
     // Manager/Admin routes
@@ -57,7 +57,7 @@ Route::middleware('auth.basic.custom')->group(function () {
 
     // Admin only routes
     Route::middleware('role:ADMIN')->group(function () {
-        Route::get('/admin/audit-logs', [AuditLogController::class, 'index']);
+        Route::get('/admin/audit-logs', [AuditLogController::class, 'adminIndex']);
         Route::get('/admin/audit-logs/export', [AuditLogController::class, 'export']);
         Route::get('/admin/customers/{id}/id-image', [CustomerController::class, 'getIdImage']);
         Route::put('/admin/settings/retention', [SettingController::class, 'updateRetention']);

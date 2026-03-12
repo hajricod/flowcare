@@ -391,9 +391,9 @@
         },
         "/manage/audit-logs": {
             "get": {
-                "operationId": "auditLog.index_0",
-                "description": "Endpoints:\n- GET /api/manage/audit-logs (STAFF, BRANCH_MANAGER, ADMIN)\n- GET /api/admin/audit-logs (ADMIN)\n\nBranch managers are limited to their branch logs. Supports pagination.\n\nResponses:\n- 200: Paginated audit log list",
-                "summary": "List audit logs",
+                "operationId": "auditLog.manageIndex",
+                "description": "Endpoint: GET /api/manage/audit-logs\nAuth: STAFF, BRANCH_MANAGER, ADMIN\n\nStaff and branch managers are limited to their branch logs. Supports pagination.\n\nResponses:\n- 200: Paginated audit log list",
+                "summary": "List audit logs for staff operations",
                 "tags": [
                     "AuditLog"
                 ],
@@ -403,21 +403,46 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "string"
-                                            }
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "data",
+                                                "total"
+                                            ]
                                         },
-                                        "total": {
-                                            "type": "integer"
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "minItems": 0,
+                                                    "maxItems": 0,
+                                                    "additionalItems": false
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "data",
+                                                "total"
+                                            ]
                                         }
-                                    },
-                                    "required": [
-                                        "data",
-                                        "total"
                                     ]
                                 }
                             }
@@ -439,9 +464,9 @@
         },
         "/admin/audit-logs": {
             "get": {
-                "operationId": "auditLog.index_0",
-                "description": "Endpoints:\n- GET /api/manage/audit-logs (STAFF, BRANCH_MANAGER, ADMIN)\n- GET /api/admin/audit-logs (ADMIN)\n\nBranch managers are limited to their branch logs. Supports pagination.\n\nResponses:\n- 200: Paginated audit log list",
-                "summary": "List audit logs",
+                "operationId": "auditLog.adminIndex",
+                "description": "Endpoint: GET /api/admin/audit-logs\nAuth: ADMIN\n\nResponses:\n- 200: Paginated audit log list",
+                "summary": "List all audit logs for administrators",
                 "tags": [
                     "AuditLog"
                 ],
@@ -451,21 +476,46 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "string"
-                                            }
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "data",
+                                                "total"
+                                            ]
                                         },
-                                        "total": {
-                                            "type": "integer"
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "minItems": 0,
+                                                    "maxItems": 0,
+                                                    "additionalItems": false
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "data",
+                                                "total"
+                                            ]
                                         }
-                                    },
-                                    "required": [
-                                        "data",
-                                        "total"
                                     ]
                                 }
                             }

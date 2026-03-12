@@ -9,31 +9,33 @@ use Illuminate\Http\Request;
 class AuditLogController extends Controller
 {
     /**
-     * List audit logs.
+     * List audit logs for staff operations.
      *
-     * Endpoints:
-     * - GET /api/manage/audit-logs (STAFF, BRANCH_MANAGER, ADMIN)
-     * - GET /api/admin/audit-logs (ADMIN)
+     * Endpoint: GET /api/manage/audit-logs
+     * Auth: STAFF, BRANCH_MANAGER, ADMIN
      *
-     * Branch managers are limited to their branch logs. Supports pagination.
+     * Staff and branch managers are limited to their branch logs. Supports pagination.
      *
      * Responses:
      * - 200: Paginated audit log list
      */
-    public function index(Request $request)
+    public function manageIndex(Request $request)
     {
-        $user = $request->user();
-        $query = AuditLog::query();
+        return $this->paginateLogs($request);
+    }
 
-        if ($user->isBranchManager()) {
-            $query->where('branch_id', $user->branch_id);
-        }
-
-        $perPage = (int) $request->query('size', 15);
-        $page = (int) $request->query('page', 1);
-        $results = $query->orderBy('created_at', 'desc')
-            ->paginate($perPage, ['*'], 'page', $page);
-        return response()->json(['data' => $results->items(), 'total' => $results->total()]);
+    /**
+     * List all audit logs for administrators.
+     *
+     * Endpoint: GET /api/admin/audit-logs
+     * Auth: ADMIN
+     *
+     * Responses:
+     * - 200: Paginated audit log list
+     */
+    public function adminIndex(Request $request)
+    {
+        return $this->paginateLogs($request);
     }
 
     /**
@@ -84,5 +86,26 @@ class AuditLogController extends Controller
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="audit_logs_' . now()->format('Y-m-d') . '.csv"',
         ]);
+    }
+
+    private function paginateLogs(Request $request)
+    {
+        $user = $request->user();
+        $query = AuditLog::query();
+
+        if ($user->isStaff() || $user->isBranchManager()) {
+            if (! $user->branch_id) {
+                return response()->json(['data' => [], 'total' => 0]);
+            }
+
+            $query->where('branch_id', $user->branch_id);
+        }
+
+        $perPage = (int) $request->query('size', 15);
+        $page = (int) $request->query('page', 1);
+        $results = $query->orderBy('created_at', 'desc')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        return response()->json(['data' => $results->items(), 'total' => $results->total()]);
     }
 }
