@@ -13,7 +13,6 @@ class AuditLogController extends Controller
      *
      * Endpoints:
      * - GET /api/manage/audit-logs (STAFF, BRANCH_MANAGER, ADMIN)
-     * - GET /api/admin/audit-logs (ADMIN)
      *
      * Branch managers are limited to their branch logs. Supports pagination.
      *

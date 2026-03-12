@@ -3,16 +3,11 @@
     "info": {
         "title": "FlowCare API Docs",
         "version": "1.0.0",
-        "description": "FlowCare Queue & Appointment Booking API. Use HTTP Basic Authentication for protected endpoints."
+        "description": "FlowCare Queue & Appointment Booking API.\n\nAuthentication:\n- Protected endpoints use HTTP Basic Authentication.\n- Use the Authorize button and choose the scheme that matches the endpoint role requirement.\n\nTest Accounts by Role:\n- CUSTOMER: username `demo_customer`, password `demo_password`\n- STAFF: username `demo_staff`, password `demo_password`\n- BRANCH_MANAGER: username `demo_manager`, password `demo_password`\n- ADMIN: username `demo_admin`, password `demo_password`\n\nNote: Demo credentials are for documentation/testing only. Do not use real production credentials."
     },
     "servers": [
         {
             "url": "http://localhost/api"
-        }
-    ],
-    "security": [
-        {
-            "http": []
         }
     ],
     "paths": {
@@ -79,7 +74,12 @@
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "basicCustomer": []
+                    }
+                ]
             },
             "get": {
                 "operationId": "appointment.index",
@@ -124,7 +124,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "basicCustomer": []
+                    }
+                ]
             }
         },
         "/appointments/{id}": {
@@ -164,7 +169,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "basicCustomer": []
+                    }
+                ]
             },
             "delete": {
                 "operationId": "appointment.cancel",
@@ -221,7 +231,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "basicCustomer": []
+                    }
+                ]
             }
         },
         "/appointments/{id}/reschedule": {
@@ -282,7 +297,12 @@
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "basicCustomer": []
+                    }
+                ]
             }
         },
         "/appointments/{id}/attachment": {
@@ -352,7 +372,21 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "basicCustomer": []
+                    },
+                    {
+                        "basicStaff": []
+                    },
+                    {
+                        "basicBranchManager": []
+                    },
+                    {
+                        "basicAdmin": []
+                    }
+                ]
             }
         },
         "/manage/audit-logs": {
@@ -389,7 +423,18 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "basicStaff": []
+                    },
+                    {
+                        "basicBranchManager": []
+                    },
+                    {
+                        "basicAdmin": []
+                    }
+                ]
             }
         },
         "/admin/audit-logs": {
@@ -426,7 +471,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "basicAdmin": []
+                    }
+                ]
             }
         },
         "/admin/audit-logs/export": {
@@ -459,7 +509,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "basicAdmin": []
+                    }
+                ]
             }
         },
         "/auth/register": {
@@ -568,7 +623,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "basicAuth": []
+                    }
+                ]
             }
         },
         "/auth/me": {
@@ -598,7 +658,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "basicAuth": []
+                    }
+                ]
             }
         },
         "/branches": {
@@ -702,7 +767,15 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "basicBranchManager": []
+                    },
+                    {
+                        "basicAdmin": []
+                    }
+                ]
             }
         },
         "/manage/customers/{id}": {
@@ -742,7 +815,15 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "basicBranchManager": []
+                    },
+                    {
+                        "basicAdmin": []
+                    }
+                ]
             }
         },
         "/admin/customers/{id}/id-image": {
@@ -793,13 +874,18 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "basicAdmin": []
+                    }
+                ]
             }
         },
         "/manage/appointments": {
             "get": {
                 "operationId": "manageAppointment.index",
-                "description": "Endpoint: GET /api/manage/appointments\nAuth: STAFF, BRANCH_MANAGER, ADMIN\n\nBranch managers are limited to their branch; staff are limited to their own\nassigned appointments. Supports optional `status` filtering and pagination.\n\nResponses:\n- 200: Paginated managed appointment list",
+                "description": "Endpoint: GET /api/manage/appointments\nAuth: STAFF, BRANCH_MANAGER, ADMIN\n\nBranch managers are limited to their branch; staff are limited to their own\nassigned appointments. Supports optional `status` of (BOOKED, CHECKED_IN, COMPLETED, NO_SHOW, CANCELED) filtering and pagination.\n\nResponses:\n- 200: Paginated managed appointment list",
                 "summary": "List appointments for operational staff views",
                 "tags": [
                     "ManageAppointment"
@@ -812,6 +898,15 @@
                             "type": "string",
                             "default": 1
                         }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter appointments by status (e.g., BOOKED, CHECKED_IN, COMPLETED, NO_SHOW, CANCELED).",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "BOOKED"
                     }
                 ],
                 "responses": {
@@ -840,7 +935,18 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "basicStaff": []
+                    },
+                    {
+                        "basicBranchManager": []
+                    },
+                    {
+                        "basicAdmin": []
+                    }
+                ]
             }
         },
         "/manage/appointments/{id}/status": {
@@ -931,7 +1037,18 @@
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "basicStaff": []
+                    },
+                    {
+                        "basicBranchManager": []
+                    },
+                    {
+                        "basicAdmin": []
+                    }
+                ]
             }
         },
         "/branches/{branchId}/queue": {
@@ -1085,7 +1202,12 @@
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "basicAdmin": []
+                    }
+                ]
             }
         },
         "/branches/{branchId}/services/{serviceId}/slots": {
@@ -1287,7 +1409,15 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "basicBranchManager": []
+                    },
+                    {
+                        "basicAdmin": []
+                    }
+                ]
             }
         },
         "/manage/slots/{id}": {
@@ -1396,7 +1526,15 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "basicBranchManager": []
+                    },
+                    {
+                        "basicAdmin": []
+                    }
+                ]
             },
             "delete": {
                 "operationId": "slot.destroy",
@@ -1461,7 +1599,15 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "basicBranchManager": []
+                    },
+                    {
+                        "basicAdmin": []
+                    }
+                ]
             }
         },
         "/admin/slots/cleanup": {
@@ -1491,7 +1637,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "basicAdmin": []
+                    }
+                ]
             }
         },
         "/manage/staff": {
@@ -1538,7 +1689,15 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "basicBranchManager": []
+                    },
+                    {
+                        "basicAdmin": []
+                    }
+                ]
             }
         },
         "/manage/staff/{id}/assign": {
@@ -1626,14 +1785,43 @@
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "basicBranchManager": []
+                    },
+                    {
+                        "basicAdmin": []
+                    }
+                ]
             }
         }
     },
     "components": {
         "securitySchemes": {
-            "http": {
+            "basicAuth": {
                 "type": "http",
+                "description": "HTTP Basic credentials for any active user account.",
+                "scheme": "basic"
+            },
+            "basicCustomer": {
+                "type": "http",
+                "description": "Use CUSTOMER account username/password.",
+                "scheme": "basic"
+            },
+            "basicStaff": {
+                "type": "http",
+                "description": "Use STAFF account username/password.",
+                "scheme": "basic"
+            },
+            "basicBranchManager": {
+                "type": "http",
+                "description": "Use BRANCH_MANAGER account username/password.",
+                "scheme": "basic"
+            },
+            "basicAdmin": {
+                "type": "http",
+                "description": "Use ADMIN account username/password.",
                 "scheme": "basic"
             }
         },

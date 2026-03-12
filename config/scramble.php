@@ -29,7 +29,16 @@ return [
         /*
          * Description rendered on the home page of the API documentation (`/docs/api`).
          */
-        'description' => 'FlowCare Queue & Appointment Booking API. Use HTTP Basic Authentication for protected endpoints.',
+        'description' => "FlowCare Queue & Appointment Booking API.\n\n"
+            . "Authentication:\n"
+            . "- Protected endpoints use HTTP Basic Authentication.\n"
+            . "- Use the Authorize button and choose the scheme that matches the endpoint role requirement.\n\n"
+            . "Test Accounts by Role:\n"
+            . "- CUSTOMER: username `cust_ahmed`, password `Customer@123`\n"
+            . "- STAFF: username `staff_muscat_1`, password `Staff@123`\n"
+            . "- BRANCH_MANAGER: username `mgr_muscat`, password `Manager@123`\n"
+            . "- ADMIN: username `admin`, password `Admin@123`\n\n"
+            . "Note: Demo credentials are for documentation/testing only. Do not use real production credentials.",
     ],
 
     /*
