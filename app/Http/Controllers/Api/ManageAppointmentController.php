@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Appointment;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\Request;
 
 class ManageAppointmentController extends Controller
 {
+    #[QueryParameter('status', description: 'Filter appointments by status (e.g., BOOKED, CHECKED_IN, COMPLETED, NO_SHOW, CANCELED).', type: 'string', required: false, example: 'BOOKED')]
     /**
      * List appointments for operational staff views.
      *
@@ -16,7 +18,7 @@ class ManageAppointmentController extends Controller
      * Auth: STAFF, BRANCH_MANAGER, ADMIN
      *
      * Branch managers are limited to their branch; staff are limited to their own
-     * assigned appointments. Supports optional `status` filtering and pagination.
+     * assigned appointments. Supports optional `status` of (BOOKED, CHECKED_IN, COMPLETED, NO_SHOW, CANCELED) filtering and pagination.
      *
      * Responses:
      * - 200: Paginated managed appointment list
