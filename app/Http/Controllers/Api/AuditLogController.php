@@ -45,7 +45,6 @@ class AuditLogController extends Controller
      * Auth: ADMIN
      *
      * Streams logs in descending creation order as a downloadable CSV file.
-     * Branch managers remain scoped to their own branch if invoked in that role.
      *
      * Responses:
      * - 200: CSV stream download
