@@ -3,7 +3,7 @@
     "info": {
         "title": "FlowCare API Docs",
         "version": "1.0.0",
-        "description": "FlowCare Queue & Appointment Booking API.\n\nAuthentication:\n- Protected endpoints use HTTP Basic Authentication.\n- Use the Authorize button and choose the scheme that matches the endpoint role requirement.\n\nTest Accounts by Role:\n- CUSTOMER: username `demo_customer`, password `demo_password`\n- STAFF: username `demo_staff`, password `demo_password`\n- BRANCH_MANAGER: username `demo_manager`, password `demo_password`\n- ADMIN: username `demo_admin`, password `demo_password`\n\nNote: Demo credentials are for documentation/testing only. Do not use real production credentials."
+        "description": "FlowCare Queue & Appointment Booking API.\n\nAuthentication:\n- Protected endpoints use HTTP Basic Authentication.\n- Use the Authorize button and choose the scheme that matches the endpoint role requirement.\n\nTest Accounts by Role:\n- CUSTOMER: username `cust_ahmed`, password `Customer@123`\n- STAFF: username `staff_muscat_1`, password `Staff@123`\n- BRANCH_MANAGER: username `mgr_muscat`, password `Manager@123`\n- ADMIN: username `admin`, password `Admin@123`\n\nNote: Demo credentials are for documentation/testing only. Do not use real production credentials."
     },
     "servers": [
         {
