@@ -53,6 +53,7 @@ Route::middleware('auth.basic.custom')->group(function () {
         Route::put('/manage/staff/{id}/assign', [StaffController::class, 'assign']);
         Route::get('/manage/customers', [CustomerController::class, 'index']);
         Route::get('/manage/customers/{id}', [CustomerController::class, 'show']);
+        Route::get('/manage/customers/{id}/id-image', [CustomerController::class, 'getIdImage']);
     });
 
     // Admin only routes

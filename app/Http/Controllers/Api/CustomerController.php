@@ -45,6 +45,8 @@ class CustomerController extends Controller
      * Endpoint: GET /api/manage/customers/{id}
      * Auth: BRANCH_MANAGER, ADMIN
      *
+     * Includes `id_image_url` when an ID image is available.
+     *
      * Responses:
      * - 200: Customer found
      * - 404: Customer not found
@@ -52,14 +54,22 @@ class CustomerController extends Controller
     public function show(string $id)
     {
         $customer = User::where('role', 'CUSTOMER')->findOrFail($id);
-        return response()->json(['data' => $customer]);
+
+        $data = $customer->toArray();
+        $data['id_image_url'] = null;
+
+        if ($customer->id_image_path && Storage::disk('local')->exists($customer->id_image_path)) {
+            $data['id_image_url'] = url("/api/manage/customers/{$customer->id}/id-image");
+        }
+
+        return response()->json(['data' => $data]);
     }
 
     /**
      * Download customer ID image.
      *
-     * Endpoint: GET /api/admin/customers/{id}/id-image
-     * Auth: ADMIN
+    * Endpoint: GET /api/manage/customers/{id}/id-image
+    * Auth: BRANCH_MANAGER, ADMIN
      *
      * Responses:
      * - 200: File download

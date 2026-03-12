@@ -532,7 +532,7 @@
         "/admin/audit-logs/export": {
             "get": {
                 "operationId": "auditLog.export",
-                "description": "Endpoint: GET /api/admin/audit-logs/export\nAuth: ADMIN\n\nStreams logs in descending creation order as a downloadable CSV file.\nBranch managers remain scoped to their own branch if invoked in that role.\n\nResponses:\n- 200: CSV stream download",
+                "description": "Endpoint: GET /api/admin/audit-logs/export\nAuth: ADMIN\n\nStreams logs in descending creation order as a downloadable CSV file.\n\nResponses:\n- 200: CSV stream download",
                 "summary": "Export audit logs as CSV",
                 "tags": [
                     "AuditLog"
@@ -831,7 +831,7 @@
         "/manage/customers/{id}": {
             "get": {
                 "operationId": "customer.show",
-                "description": "Endpoint: GET /api/manage/customers/{id}\nAuth: BRANCH_MANAGER, ADMIN\n\nResponses:\n- 200: Customer found\n- 404: Customer not found",
+                "description": "Endpoint: GET /api/manage/customers/{id}\nAuth: BRANCH_MANAGER, ADMIN\n\nIncludes `id_image_url` when an ID image is available.\n\nResponses:\n- 200: Customer found\n- 404: Customer not found",
                 "summary": "Get a single customer profile",
                 "tags": [
                     "Customer"
@@ -876,10 +876,69 @@
                 ]
             }
         },
+        "/manage/customers/{id}/id-image": {
+            "get": {
+                "operationId": "customer.getIdImage_0",
+                "description": "Endpoint: GET /api/manage/customers/{id}/id-image\nAuth: BRANCH_MANAGER, ADMIN\n\nResponses:\n- 200: File download\n- 404: Customer or ID image not found",
+                "summary": "Download customer ID image",
+                "tags": [
+                    "Customer"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "ID image not found."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "basicBranchManager": []
+                    },
+                    {
+                        "basicAdmin": []
+                    }
+                ]
+            }
+        },
         "/admin/customers/{id}/id-image": {
             "get": {
-                "operationId": "customer.getIdImage",
-                "description": "Endpoint: GET /api/admin/customers/{id}/id-image\nAuth: ADMIN\n\nResponses:\n- 200: File download\n- 404: Customer or ID image not found",
+                "operationId": "customer.getIdImage_0",
+                "description": "Endpoint: GET /api/manage/customers/{id}/id-image\nAuth: BRANCH_MANAGER, ADMIN\n\nResponses:\n- 200: File download\n- 404: Customer or ID image not found",
                 "summary": "Download customer ID image",
                 "tags": [
                     "Customer"
@@ -935,7 +994,7 @@
         "/manage/appointments": {
             "get": {
                 "operationId": "manageAppointment.index",
-                "description": "Endpoint: GET /api/manage/appointments\nAuth: STAFF, BRANCH_MANAGER, ADMIN\n\nBranch managers are limited to their branch; staff are limited to their own\nassigned appointments. Supports optional `status` of (BOOKED, CHECKED_IN, COMPLETED, NO_SHOW, CANCELED) filtering and pagination.\n\nResponses:\n- 200: Paginated managed appointment list",
+                "description": "Endpoint: GET /api/manage/appointments\nAuth: STAFF, BRANCH_MANAGER, ADMIN\n\nBranch managers are limited to their branch; staff are limited to their own\nassigned appointments. Supports optional `status` of (BOOKED, CHECKED_IN, COMPLETED, NO_SHOW, CANCELLED ) filtering and pagination.\n\nResponses:\n- 200: Paginated managed appointment list",
                 "summary": "List appointments for operational staff views",
                 "tags": [
                     "ManageAppointment"
@@ -952,7 +1011,7 @@
                     {
                         "name": "status",
                         "in": "query",
-                        "description": "Filter appointments by status (e.g., BOOKED, CHECKED_IN, COMPLETED, NO_SHOW, CANCELED).",
+                        "description": "Filter appointments by status (e.g., BOOKED, CHECKED_IN, COMPLETED, NO_SHOW, CANCELLED ).",
                         "schema": {
                             "type": "string"
                         },
