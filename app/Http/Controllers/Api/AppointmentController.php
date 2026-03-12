@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Appointment;
 use App\Models\Slot;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -60,18 +61,26 @@ class AppointmentController extends Controller
             Storage::disk('local')->putFileAs('uploads/appointments', $file, "{$uuid}.{$ext}");
         }
 
-        $appointment = Appointment::create([
-            'customer_id' => $user->id,
-            'branch_id' => $slot->branch_id,
-            'service_type_id' => $slot->service_type_id,
-            'slot_id' => $slot->id,
-            'staff_id' => $slot->staff_id,
-            'status' => 'BOOKED',
-            'notes' => $validated['notes'] ?? null,
-            'attachment_path' => $attachmentPath,
-            'attachment_original_name' => $attachmentOriginalName,
-            'queue_number' => $queueNumber,
-        ]);
+        try {
+            $appointment = Appointment::create([
+                'customer_id' => $user->id,
+                'branch_id' => $slot->branch_id,
+                'service_type_id' => $slot->service_type_id,
+                'slot_id' => $slot->id,
+                'staff_id' => $slot->staff_id,
+                'status' => 'BOOKED',
+                'notes' => $validated['notes'] ?? null,
+                'attachment_path' => $attachmentPath,
+                'attachment_original_name' => $attachmentOriginalName,
+                'queue_number' => $queueNumber,
+            ]);
+        } catch (QueryException $e) {
+            if ($this->isActiveSlotConstraintViolation($e)) {
+                return response()->json(['message' => 'Slot is fully booked.'], 422);
+            }
+
+            throw $e;
+        }
 
         AuditLog::log($user->id, $user->role, 'APPOINTMENT_BOOKED', 'APPOINTMENT', $appointment->id, null, $slot->branch_id);
 
@@ -189,12 +198,20 @@ class AppointmentController extends Controller
             return response()->json(['message' => 'New slot is fully booked.'], 422);
         }
 
-        $appointment->update([
-            'slot_id' => $newSlot->id,
-            'staff_id' => $newSlot->staff_id,
-            'branch_id' => $newSlot->branch_id,
-            'service_type_id' => $newSlot->service_type_id,
-        ]);
+        try {
+            $appointment->update([
+                'slot_id' => $newSlot->id,
+                'staff_id' => $newSlot->staff_id,
+                'branch_id' => $newSlot->branch_id,
+                'service_type_id' => $newSlot->service_type_id,
+            ]);
+        } catch (QueryException $e) {
+            if ($this->isActiveSlotConstraintViolation($e)) {
+                return response()->json(['message' => 'New slot is fully booked.'], 422);
+            }
+
+            throw $e;
+        }
 
         AuditLog::log($user->id, $user->role, 'APPOINTMENT_RESCHEDULED', 'APPOINTMENT', $appointment->id, ['new_slot_id' => $newSlot->id], $appointment->branch_id);
 
@@ -230,5 +247,14 @@ class AppointmentController extends Controller
         }
 
         return Storage::disk('local')->download($appointment->attachment_path, $appointment->attachment_original_name);
+    }
+
+    private function isActiveSlotConstraintViolation(QueryException $e): bool
+    {
+        $sqlState = $e->errorInfo[0] ?? null;
+        $message = $e->getMessage();
+
+        return $sqlState === '23505'
+            && str_contains($message, 'appointments_active_slot_unique');
     }
 }
