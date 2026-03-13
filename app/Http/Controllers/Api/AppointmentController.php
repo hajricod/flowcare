@@ -226,11 +226,13 @@ class AppointmentController extends Controller
      *
      * Access rules:
      * - Customer can download only their own appointment attachment
-     * - Staff/Manager/Admin can download based on route role access
+    * - Staff can download only attachments for appointments assigned to them
+    * - Branch manager can download only attachments from their branch
+    * - Admin can download any appointment attachment
      *
      * Responses:
      * - 200: File download
-     * - 403: Customer is not owner of the appointment
+     * - 403: Forbidden by ownership/scope rules
      * - 404: Appointment or attachment not found
      */
     public function getAttachment(Request $request, string $id)
@@ -239,6 +241,14 @@ class AppointmentController extends Controller
         $appointment = Appointment::findOrFail($id);
 
         if ($user->isCustomer() && $appointment->customer_id !== $user->id) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        if ($user->isStaff() && $appointment->staff_id !== $user->id) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        if ($user->isBranchManager() && $appointment->branch_id !== $user->branch_id) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 

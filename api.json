@@ -308,7 +308,7 @@
         "/appointments/{id}/attachment": {
             "get": {
                 "operationId": "appointment.getAttachment",
-                "description": "Endpoint: GET /api/appointments/{id}/attachment\nAuth: CUSTOMER, STAFF, BRANCH_MANAGER, ADMIN\n\nAccess rules:\n- Customer can download only their own appointment attachment\n- Staff/Manager/Admin can download based on route role access\n\nResponses:\n- 200: File download\n- 403: Customer is not owner of the appointment\n- 404: Appointment or attachment not found",
+                "description": "Endpoint: GET /api/appointments/{id}/attachment\nAuth: CUSTOMER, STAFF, BRANCH_MANAGER, ADMIN\n\nAccess rules:\n- Customer can download only their own appointment attachment\n- Staff can download only attachments for appointments assigned to them\n- Branch manager can download only attachments from their branch\n- Admin can download any appointment attachment\n\nResponses:\n- 200: File download\n- 403: Forbidden by ownership/scope rules\n- 404: Appointment or attachment not found",
                 "summary": "Download an appointment attachment",
                 "tags": [
                     "Appointment"
@@ -972,7 +972,7 @@
         "/manage/customers/{id}": {
             "get": {
                 "operationId": "customer.show",
-                "description": "Endpoint: GET /api/manage/customers/{id}\nAuth: BRANCH_MANAGER, ADMIN\n\nIncludes `id_image_url` when an ID image is available.\n\nResponses:\n- 200: Customer found\n- 404: Customer not found",
+                "description": "Endpoint: GET /api/manage/customers/{id}\nAuth: BRANCH_MANAGER, ADMIN\n\nIncludes `id_image_url` for admins when an ID image is available.\n\nResponses:\n- 200: Customer found\n- 404: Customer not found",
                 "summary": "Get a single customer profile",
                 "tags": [
                     "Customer"
@@ -1017,10 +1017,10 @@
                 ]
             }
         },
-        "/manage/customers/{id}/id-image": {
+        "/admin/customers/{id}/id-image": {
             "get": {
                 "operationId": "customer.getIdImage",
-                "description": "Endpoint: GET /api/manage/customers/{id}/id-image\nAuth: BRANCH_MANAGER, ADMIN\n\nResponses:\n- 200: File download\n- 404: Customer or ID image not found",
+                "description": "Endpoint: GET /api/admin/customers/{id}/id-image\nAuth: ADMIN\n\nResponses:\n- 200: File download\n- 404: Customer or ID image not found",
                 "summary": "Download customer ID image",
                 "tags": [
                     "Customer"
@@ -1067,9 +1067,6 @@
                     }
                 },
                 "security": [
-                    {
-                        "basicBranchManager": []
-                    },
                     {
                         "basicAdmin": []
                     }

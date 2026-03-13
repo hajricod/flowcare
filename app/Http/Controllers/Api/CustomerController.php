@@ -48,7 +48,7 @@ class CustomerController extends Controller
 
                 $payload['id_image_url'] = null;
                 if ($customer->id_image_path && Storage::disk('local')->exists($customer->id_image_path)) {
-                    $payload['id_image_url'] = url("/api/manage/customers/{$customer->id}/id-image");
+                    $payload['id_image_url'] = url("/api/admin/customers/{$customer->id}/id-image");
                 }
 
                 return $payload;
@@ -64,21 +64,23 @@ class CustomerController extends Controller
      * Endpoint: GET /api/manage/customers/{id}
      * Auth: BRANCH_MANAGER, ADMIN
      *
-     * Includes `id_image_url` when an ID image is available.
+    * Includes `id_image_url` for admins when an ID image is available.
      *
      * Responses:
      * - 200: Customer found
      * - 404: Customer not found
      */
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
         $customer = User::where('role', 'CUSTOMER')->findOrFail($id);
+        $isAdmin = $request->user()?->isAdmin() ?? false;
 
         $data = $customer->toArray();
-        $data['id_image_url'] = null;
-
-        if ($customer->id_image_path && Storage::disk('local')->exists($customer->id_image_path)) {
-            $data['id_image_url'] = url("/api/manage/customers/{$customer->id}/id-image");
+        if ($isAdmin) {
+            $data['id_image_url'] = null;
+            if ($customer->id_image_path && Storage::disk('local')->exists($customer->id_image_path)) {
+                $data['id_image_url'] = url("/api/admin/customers/{$customer->id}/id-image");
+            }
         }
 
         return response()->json(['data' => $data]);
@@ -87,8 +89,8 @@ class CustomerController extends Controller
     /**
      * Download customer ID image.
      *
-     * Endpoint: GET /api/manage/customers/{id}/id-image
-     * Auth: BRANCH_MANAGER, ADMIN
+    * Endpoint: GET /api/admin/customers/{id}/id-image
+    * Auth: ADMIN
      *
      * Responses:
      * - 200: File download
