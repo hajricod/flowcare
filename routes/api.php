@@ -60,7 +60,6 @@ Route::middleware('auth.basic.custom')->group(function () {
     Route::middleware('role:ADMIN')->group(function () {
         Route::get('/admin/audit-logs', [AuditLogController::class, 'adminIndex']);
         Route::get('/admin/audit-logs/export', [AuditLogController::class, 'export']);
-        Route::get('/admin/customers/{id}/id-image', [CustomerController::class, 'getIdImage']);
         Route::put('/admin/settings/retention', [SettingController::class, 'updateRetention']);
         Route::post('/admin/slots/cleanup', [SlotController::class, 'cleanup']);
     });

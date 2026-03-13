@@ -776,7 +776,7 @@
         "/manage/customers": {
             "get": {
                 "operationId": "customer.index",
-                "description": "Endpoint: GET /api/manage/customers\nAuth: BRANCH_MANAGER, ADMIN\n\nSupports optional `term` search across name, email, and username, with\npagination.\n\nResponses:\n- 200: Paginated customer list",
+                "description": "Endpoint: GET /api/manage/customers\nAuth: BRANCH_MANAGER, ADMIN\n\nSupports optional `term` search across name, email, and username, with\npagination. Includes `id_image_url` when an ID image is available.\n\nResponses:\n- 200: Paginated customer list",
                 "summary": "List customers for management",
                 "tags": [
                     "Customer"
@@ -802,7 +802,148 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "type": "string"
+                                                "anyOf": [
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "string"
+                                                            },
+                                                            "username": {
+                                                                "type": "string"
+                                                            },
+                                                            "email": {
+                                                                "type": "string"
+                                                            },
+                                                            "full_name": {
+                                                                "type": "string"
+                                                            },
+                                                            "phone": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "role": {
+                                                                "type": "string"
+                                                            },
+                                                            "branch_id": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "id_image_path": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "is_active": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "created_at": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ],
+                                                                "format": "date-time"
+                                                            },
+                                                            "updated_at": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ],
+                                                                "format": "date-time"
+                                                            },
+                                                            "id_image_url": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "username",
+                                                            "email",
+                                                            "full_name",
+                                                            "phone",
+                                                            "role",
+                                                            "branch_id",
+                                                            "id_image_path",
+                                                            "is_active",
+                                                            "created_at",
+                                                            "updated_at",
+                                                            "id_image_url"
+                                                        ]
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "string"
+                                                            },
+                                                            "username": {
+                                                                "type": "string"
+                                                            },
+                                                            "email": {
+                                                                "type": "string"
+                                                            },
+                                                            "full_name": {
+                                                                "type": "string"
+                                                            },
+                                                            "phone": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "role": {
+                                                                "type": "string"
+                                                            },
+                                                            "branch_id": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "id_image_path": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "is_active": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "created_at": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ],
+                                                                "format": "date-time"
+                                                            },
+                                                            "updated_at": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ],
+                                                                "format": "date-time"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "username",
+                                                            "email",
+                                                            "full_name",
+                                                            "phone",
+                                                            "role",
+                                                            "branch_id",
+                                                            "id_image_path",
+                                                            "is_active",
+                                                            "created_at",
+                                                            "updated_at"
+                                                        ]
+                                                    }
+                                                ]
                                             }
                                         },
                                         "total": {
@@ -878,7 +1019,7 @@
         },
         "/manage/customers/{id}/id-image": {
             "get": {
-                "operationId": "customer.getIdImage_0",
+                "operationId": "customer.getIdImage",
                 "description": "Endpoint: GET /api/manage/customers/{id}/id-image\nAuth: BRANCH_MANAGER, ADMIN\n\nResponses:\n- 200: File download\n- 404: Customer or ID image not found",
                 "summary": "Download customer ID image",
                 "tags": [
@@ -929,62 +1070,6 @@
                     {
                         "basicBranchManager": []
                     },
-                    {
-                        "basicAdmin": []
-                    }
-                ]
-            }
-        },
-        "/admin/customers/{id}/id-image": {
-            "get": {
-                "operationId": "customer.getIdImage_0",
-                "description": "Endpoint: GET /api/manage/customers/{id}/id-image\nAuth: BRANCH_MANAGER, ADMIN\n\nResponses:\n- 200: File download\n- 404: Customer or ID image not found",
-                "summary": "Download customer ID image",
-                "tags": [
-                    "Customer"
-                ],
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "ID image not found."
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
                     {
                         "basicAdmin": []
                     }

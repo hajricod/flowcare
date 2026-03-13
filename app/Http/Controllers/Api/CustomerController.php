@@ -15,8 +15,8 @@ class CustomerController extends Controller
      * Endpoint: GET /api/manage/customers
      * Auth: BRANCH_MANAGER, ADMIN
      *
-     * Supports optional `term` search across name, email, and username, with
-     * pagination.
+        * Supports optional `term` search across name, email, and username, with
+        * pagination. Includes `id_image_url` when an ID image is available.
      *
      * Responses:
      * - 200: Paginated customer list
@@ -34,9 +34,28 @@ class CustomerController extends Controller
             });
         }
 
+        $includeIdImageUrl = $request->user()?->isAdmin() ?? false;
         $perPage = (int) $request->query('size', 15);
         $results = $query->paginate($perPage, ['*'], 'page', $request->query('page', 1));
-        return response()->json(['data' => $results->items(), 'total' => $results->total()]);
+
+        $data = collect($results->items())
+            ->map(function (User $customer) use ($includeIdImageUrl) {
+                $payload = $customer->toArray();
+
+                if (! $includeIdImageUrl) {
+                    return $payload;
+                }
+
+                $payload['id_image_url'] = null;
+                if ($customer->id_image_path && Storage::disk('local')->exists($customer->id_image_path)) {
+                    $payload['id_image_url'] = url("/api/manage/customers/{$customer->id}/id-image");
+                }
+
+                return $payload;
+            })
+            ->values();
+
+        return response()->json(['data' => $data, 'total' => $results->total()]);
     }
 
     /**
@@ -68,8 +87,8 @@ class CustomerController extends Controller
     /**
      * Download customer ID image.
      *
-    * Endpoint: GET /api/manage/customers/{id}/id-image
-    * Auth: BRANCH_MANAGER, ADMIN
+     * Endpoint: GET /api/manage/customers/{id}/id-image
+     * Auth: BRANCH_MANAGER, ADMIN
      *
      * Responses:
      * - 200: File download
