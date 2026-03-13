@@ -1801,6 +1801,48 @@
                 ]
             }
         },
+        "/admin/slots/trashed": {
+            "get": {
+                "operationId": "slot.trashed",
+                "description": "Endpoint: GET /api/admin/slots/trashed\nAuth: ADMIN\n\nReturns only soft-deleted slots with pagination.\n\nResponses:\n- 200: Paginated trashed slot list",
+                "summary": "List soft-deleted slots",
+                "tags": [
+                    "Slot"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "total"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "basicAdmin": []
+                    }
+                ]
+            }
+        },
         "/admin/slots/cleanup": {
             "post": {
                 "operationId": "slot.cleanup",

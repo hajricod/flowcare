@@ -235,6 +235,30 @@ class SlotController extends Controller
     }
 
     /**
+     * List soft-deleted slots.
+     *
+     * Endpoint: GET /api/admin/slots/trashed
+     * Auth: ADMIN
+     *
+     * Returns only soft-deleted slots with pagination.
+     *
+     * Responses:
+     * - 200: Paginated trashed slot list
+     */
+    public function trashed(Request $request)
+    {
+        $perPage = (int) $request->query('size', 15);
+        $page = (int) $request->query('page', 1);
+
+        $results = Slot::onlyTrashed()
+            ->with(['branch', 'serviceType', 'staff'])
+            ->orderBy('deleted_at', 'desc')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        return response()->json(['data' => $results->items(), 'total' => $results->total()]);
+    }
+
+    /**
      * Permanently remove soft-deleted slots after retention period.
      *
      * Endpoint: POST /api/admin/slots/cleanup
