@@ -66,10 +66,10 @@ Default seeded credentials:
 
 | Role | Username | Password |
 |------|----------|----------|
-| ADMIN | `admin` | `admin123` |
-| BRANCH_MANAGER | `manager_muscat` | `manager123` |
-| STAFF | `staff_muscat_1` | `staff123` |
-| CUSTOMER | `customer_1` | `customer123` |
+| ADMIN | `admin` | `Admin@123` |
+| BRANCH_MANAGER | `mgr_muscat` | `Manager@123` |
+| STAFF | `staff_muscat_1` | `Staff@123` |
+| CUSTOMER | `cust_ahmed` | `Customer@123` |
 
 ## API Documentation (Scramble)
 
@@ -95,7 +95,7 @@ When running locally via Sail, open:
 Example:
 
 ```bash
-echo -n 'admin:admin123' | base64
+echo -n 'admin:Admin@123' | base64
 ```
 
 Then use:
@@ -213,10 +213,10 @@ Use these shell variables once, then run any command below:
 ```bash
 BASE_URL="http://localhost/api"
 
-ADMIN_AUTH="$(printf 'admin:admin123' | base64)"
-MANAGER_AUTH="$(printf 'manager_muscat:manager123' | base64)"
-STAFF_AUTH="$(printf 'staff_muscat_1:staff123' | base64)"
-CUSTOMER_AUTH="$(printf 'customer_1:customer123' | base64)"
+ADMIN_AUTH="$(printf 'admin:Admin@123' | base64)"
+MANAGER_AUTH="$(printf 'mgr_muscat:Manager@123' | base64)"
+STAFF_AUTH="$(printf 'staff_muscat_1:Staff@123' | base64)"
+CUSTOMER_AUTH="$(printf 'cust_ahmed:Customer@123' | base64)"
 ```
 
 ### Public Endpoints
@@ -238,7 +238,7 @@ curl "$BASE_URL/branches/br_muscat_001/queue"
 curl -X POST "$BASE_URL/auth/register" \
 	-F "username=new_customer" \
 	-F "email=new_customer@example.com" \
-	-F "password=customer123" \
+	-F "password=Customer@123" \
 	-F "full_name=New Customer" \
 	-F "phone=+96890000000" \
 	-F "id_image=@/path/to/id-image.jpg"
