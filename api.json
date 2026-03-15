@@ -83,19 +83,38 @@
             },
             "get": {
                 "operationId": "appointment.index",
-                "description": "Endpoint: GET /api/appointments\nAuth: CUSTOMER\n\nSupports pagination with query parameters:\n- page (default: 1)\n- size (default: 15)\n\nResponses:\n- 200: Paginated appointment list with total count",
+                "description": "Endpoint: GET /api/appointments\nAuth: CUSTOMER\n\nSupports pagination with query parameters:\n- page (default: 1)\n- size (default: 15)\n- term (optional case-insensitive search over status, notes, branch, service)\n\nResponse shape:\n- `results`: records for the current page\n- `total`: total matching records\n\nResponses:\n- 200: Paginated appointment list with total count",
                 "summary": "List appointments for the authenticated customer",
                 "tags": [
                     "Appointment"
                 ],
                 "parameters": [
                     {
+                        "name": "term",
+                        "in": "query",
+                        "description": "Search by appointment status, notes, service type, or branch (case-insensitive).",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "confirmed"
+                    },
+                    {
                         "name": "page",
                         "in": "query",
+                        "description": "Page number.",
                         "schema": {
-                            "type": "string",
-                            "default": 1
-                        }
+                            "type": "integer"
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 15
                     }
                 ],
                 "responses": {
@@ -106,7 +125,7 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "data": {
+                                        "results": {
                                             "type": "array",
                                             "items": {
                                                 "type": "string"
@@ -117,7 +136,7 @@
                                         }
                                     },
                                     "required": [
-                                        "data",
+                                        "results",
                                         "total"
                                     ]
                                 }
@@ -392,10 +411,39 @@
         "/manage/audit-logs": {
             "get": {
                 "operationId": "auditLog.manageIndex",
-                "description": "Endpoint: GET /api/manage/audit-logs\nAuth: STAFF, BRANCH_MANAGER, ADMIN\n\nStaff and branch managers are limited to their branch logs. Supports pagination.\n\nResponses:\n- 200: Paginated audit log list",
+                "description": "Endpoint: GET /api/manage/audit-logs\nAuth: STAFF, BRANCH_MANAGER, ADMIN\n\nStaff and branch managers are limited to their branch logs. Supports\npagination and optional case-insensitive `term` search.\n\nResponse shape:\n- `results`: records for the current page\n- `total`: total matching records\n\nResponses:\n- 200: Paginated audit log list",
                 "summary": "List audit logs for staff operations",
                 "tags": [
                     "AuditLog"
+                ],
+                "parameters": [
+                    {
+                        "name": "term",
+                        "in": "query",
+                        "description": "Search by action, entity, actor, role, or branch (case-insensitive).",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "appointment"
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 15
+                    }
                 ],
                 "responses": {
                     "200": {
@@ -407,7 +455,7 @@
                                         {
                                             "type": "object",
                                             "properties": {
-                                                "data": {
+                                                "results": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"
@@ -418,14 +466,14 @@
                                                 }
                                             },
                                             "required": [
-                                                "data",
+                                                "results",
                                                 "total"
                                             ]
                                         },
                                         {
                                             "type": "object",
                                             "properties": {
-                                                "data": {
+                                                "results": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"
@@ -439,7 +487,7 @@
                                                 }
                                             },
                                             "required": [
-                                                "data",
+                                                "results",
                                                 "total"
                                             ]
                                         }
@@ -465,10 +513,39 @@
         "/admin/audit-logs": {
             "get": {
                 "operationId": "auditLog.adminIndex",
-                "description": "Endpoint: GET /api/admin/audit-logs\nAuth: ADMIN\n\nResponses:\n- 200: Paginated audit log list",
+                "description": "Endpoint: GET /api/admin/audit-logs\nAuth: ADMIN\n\nSupports pagination and optional case-insensitive `term` search.\n\nResponse shape:\n- `results`: records for the current page\n- `total`: total matching records\n\nResponses:\n- 200: Paginated audit log list",
                 "summary": "List all audit logs for administrators",
                 "tags": [
                     "AuditLog"
+                ],
+                "parameters": [
+                    {
+                        "name": "term",
+                        "in": "query",
+                        "description": "Search by action, entity, actor, role, or branch (case-insensitive).",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "appointment"
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 15
+                    }
                 ],
                 "responses": {
                     "200": {
@@ -480,7 +557,7 @@
                                         {
                                             "type": "object",
                                             "properties": {
-                                                "data": {
+                                                "results": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"
@@ -491,14 +568,14 @@
                                                 }
                                             },
                                             "required": [
-                                                "data",
+                                                "results",
                                                 "total"
                                             ]
                                         },
                                         {
                                             "type": "object",
                                             "properties": {
-                                                "data": {
+                                                "results": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"
@@ -512,7 +589,7 @@
                                                 }
                                             },
                                             "required": [
-                                                "data",
+                                                "results",
                                                 "total"
                                             ]
                                         }
@@ -719,20 +796,12 @@
         "/branches": {
             "get": {
                 "operationId": "branch.index",
-                "description": "Endpoint: GET /api/branches\nAuth: Public\n\nSupports pagination and optional `term` filtering by branch name or city.\n\nResponses:\n- 200: Paginated list of active branches",
+                "description": "Endpoint: GET /api/branches\nAuth: Public\n\nSupports pagination and optional `term` filtering by branch name or city.\n\nResponse shape:\n- `results`: records for the current page\n- `total`: total matching records\n\nResponses:\n- 200: Paginated list of active branches",
                 "summary": "List active branches with optional search",
                 "tags": [
                     "Branch"
                 ],
                 "parameters": [
-                    {
-                        "name": "page",
-                        "in": "query",
-                        "schema": {
-                            "type": "string",
-                            "default": 1
-                        }
-                    },
                     {
                         "name": "term",
                         "in": "query",
@@ -741,6 +810,24 @@
                             "type": "string"
                         },
                         "example": "muscat"
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 15
                     }
                 ],
                 "responses": {
@@ -751,7 +838,7 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "data": {
+                                        "results": {
                                             "type": "array",
                                             "items": {
                                                 "type": "string"
@@ -762,7 +849,7 @@
                                         }
                                     },
                                     "required": [
-                                        "data",
+                                        "results",
                                         "total"
                                     ]
                                 }
@@ -776,19 +863,38 @@
         "/manage/customers": {
             "get": {
                 "operationId": "customer.index",
-                "description": "Endpoint: GET /api/manage/customers\nAuth: BRANCH_MANAGER, ADMIN\n\nSupports optional `term` search across name, email, and username, with\npagination. Includes `id_image_url` when an ID image is available.\n\nResponses:\n- 200: Paginated customer list",
+                "description": "Endpoint: GET /api/manage/customers\nAuth: BRANCH_MANAGER, ADMIN\n\nSupports optional case-insensitive `term` search across name, email, and\nusername, with pagination. Includes `id_image_url` for admins when an ID\nimage is available.\n\nResponse shape:\n- `results`: records for the current page\n- `total`: total matching records\n\nResponses:\n- 200: Paginated customer list",
                 "summary": "List customers for management",
                 "tags": [
                     "Customer"
                 ],
                 "parameters": [
                     {
+                        "name": "term",
+                        "in": "query",
+                        "description": "Search customer full name, email, or username (case-insensitive).",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "ahmed"
+                    },
+                    {
                         "name": "page",
                         "in": "query",
+                        "description": "Page number.",
                         "schema": {
-                            "type": "string",
-                            "default": 1
-                        }
+                            "type": "integer"
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 15
                     }
                 ],
                 "responses": {
@@ -799,7 +905,7 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "data": {
+                                        "results": {
                                             "type": "array",
                                             "items": {
                                                 "anyOf": [
@@ -951,7 +1057,7 @@
                                         }
                                     },
                                     "required": [
-                                        "data",
+                                        "results",
                                         "total"
                                     ]
                                 }
@@ -1076,20 +1182,12 @@
         "/manage/appointments": {
             "get": {
                 "operationId": "manageAppointment.index",
-                "description": "Endpoint: GET /api/manage/appointments\nAuth: STAFF, BRANCH_MANAGER, ADMIN\n\nBranch managers are limited to their branch; staff are limited to their own\nassigned appointments. Supports optional `status` of (BOOKED, CHECKED_IN, COMPLETED, NO_SHOW, CANCELLED ) filtering and pagination.\n\nResponses:\n- 200: Paginated managed appointment list",
+                "description": "Endpoint: GET /api/manage/appointments\nAuth: STAFF, BRANCH_MANAGER, ADMIN\n\nBranch managers are limited to their branch; staff are limited to their own\nassigned appointments. Supports optional `status` of (BOOKED, CHECKED_IN,\nCOMPLETED, NO_SHOW, CANCELLED), optional case-insensitive `term` search,\nand pagination.\n\nResponse shape:\n- `results`: records for the current page\n- `total`: total matching records\n\nResponses:\n- 200: Paginated managed appointment list",
                 "summary": "List appointments for operational staff views",
                 "tags": [
                     "ManageAppointment"
                 ],
                 "parameters": [
-                    {
-                        "name": "page",
-                        "in": "query",
-                        "schema": {
-                            "type": "string",
-                            "default": 1
-                        }
-                    },
                     {
                         "name": "status",
                         "in": "query",
@@ -1098,6 +1196,33 @@
                             "type": "string"
                         },
                         "example": "BOOKED"
+                    },
+                    {
+                        "name": "term",
+                        "in": "query",
+                        "description": "Search by status, notes, customer, service, or branch (case-insensitive).",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "booked"
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 15
                     }
                 ],
                 "responses": {
@@ -1108,7 +1233,7 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "data": {
+                                        "results": {
                                             "type": "array",
                                             "items": {
                                                 "type": "string"
@@ -1119,7 +1244,7 @@
                                         }
                                     },
                                     "required": [
-                                        "data",
+                                        "results",
                                         "total"
                                     ]
                                 }
@@ -1291,7 +1416,7 @@
         "/branches/{branchId}/services": {
             "get": {
                 "operationId": "serviceType.byBranch",
-                "description": "Endpoint: GET /api/branches/{branch}/services\nAuth: Public\n\nSupports pagination with `page` and `size` query parameters.\n\nResponses:\n- 200: Paginated service type list\n- 404: Branch not found or inactive",
+                "description": "Endpoint: GET /api/branches/{branch}/services\nAuth: Public\n\nSupports pagination with `page` and `size`, plus optional case-insensitive\n`term` search across service name and description.\n\nResponse shape:\n- `results`: records for the current page\n- `total`: total matching records\n\nResponses:\n- 200: Paginated service type list\n- 404: Branch not found or inactive",
                 "summary": "List active service types for a specific active branch",
                 "tags": [
                     "ServiceType"
@@ -1304,6 +1429,33 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "name": "term",
+                        "in": "query",
+                        "description": "Search service name or description (case-insensitive).",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "consult"
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 15
                     }
                 ],
                 "responses": {
@@ -1314,7 +1466,7 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "data": {
+                                        "results": {
                                             "type": "array",
                                             "items": {
                                                 "type": "string"
@@ -1325,7 +1477,7 @@
                                         }
                                     },
                                     "required": [
-                                        "data",
+                                        "results",
                                         "total"
                                     ]
                                 }
@@ -1404,7 +1556,7 @@
         "/branches/{branchId}/services/{serviceId}/slots": {
             "get": {
                 "operationId": "slot.available",
-                "description": "Endpoint: GET /api/branches/{branch}/services/{service}/slots\nAuth: Public\n\nReturns active slots not already reserved by BOOKED or CHECKED_IN\nappointments. Supports optional `date` filter and pagination.\n\nResponses:\n- 200: Paginated available slot list",
+                "description": "Endpoint: GET /api/branches/{branch}/services/{service}/slots\nAuth: Public\n\nReturns active slots not already reserved by BOOKED or CHECKED_IN\nappointments. Supports optional `date` filter, optional case-insensitive\n`term` search, and pagination.\n\nResponse shape:\n- `results`: records for the current page\n- `total`: total matching records\n\nResponses:\n- 200: Paginated available slot list",
                 "summary": "List available slots for a branch service",
                 "tags": [
                     "Slot"
@@ -1427,12 +1579,40 @@
                         }
                     },
                     {
+                        "name": "date",
+                        "in": "query",
+                        "description": "Filter slots by date (YYYY-MM-DD).",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "2026-03-20"
+                    },
+                    {
+                        "name": "term",
+                        "in": "query",
+                        "description": "Search slot id or assigned staff name/email (case-insensitive).",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "fatima"
+                    },
+                    {
                         "name": "page",
                         "in": "query",
+                        "description": "Page number.",
                         "schema": {
-                            "type": "string",
-                            "default": 1
-                        }
+                            "type": "integer"
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 15
                     }
                 ],
                 "responses": {
@@ -1443,7 +1623,7 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "data": {
+                                        "results": {
                                             "type": "array",
                                             "items": {
                                                 "type": "string"
@@ -1454,7 +1634,7 @@
                                         }
                                     },
                                     "required": [
-                                        "data",
+                                        "results",
                                         "total"
                                     ]
                                 }
@@ -1804,10 +1984,39 @@
         "/admin/slots/trashed": {
             "get": {
                 "operationId": "slot.trashed",
-                "description": "Endpoint: GET /api/admin/slots/trashed\nAuth: ADMIN\n\nReturns only soft-deleted slots with pagination.\n\nResponses:\n- 200: Paginated trashed slot list",
+                "description": "Endpoint: GET /api/admin/slots/trashed\nAuth: ADMIN\n\nReturns only soft-deleted slots with optional case-insensitive `term`\nsearch and pagination.\n\nResponse shape:\n- `results`: records for the current page\n- `total`: total matching records\n\nResponses:\n- 200: Paginated trashed slot list",
                 "summary": "List soft-deleted slots",
                 "tags": [
                     "Slot"
+                ],
+                "parameters": [
+                    {
+                        "name": "term",
+                        "in": "query",
+                        "description": "Search by slot id, branch, service, or staff (case-insensitive).",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "muscat"
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 15
+                    }
                 ],
                 "responses": {
                     "200": {
@@ -1817,7 +2026,7 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "data": {
+                                        "results": {
                                             "type": "array",
                                             "items": {
                                                 "type": "string"
@@ -1828,7 +2037,7 @@
                                         }
                                     },
                                     "required": [
-                                        "data",
+                                        "results",
                                         "total"
                                     ]
                                 }
@@ -1881,19 +2090,38 @@
         "/manage/staff": {
             "get": {
                 "operationId": "staff.index",
-                "description": "Endpoint: GET /api/manage/staff\nAuth: BRANCH_MANAGER, ADMIN\n\nBranch managers are scoped to their branch. Supports optional `term`\nfiltering and pagination.\n\nResponses:\n- 200: Paginated staff list with assigned service types",
+                "description": "Endpoint: GET /api/manage/staff\nAuth: BRANCH_MANAGER, ADMIN\n\nBranch managers are scoped to their branch. Supports optional `term`\nfiltering and pagination.\n\nResponse shape:\n- `results`: records for the current page\n- `total`: total matching records\n\nResponses:\n- 200: Paginated staff list with assigned service types",
                 "summary": "List staff and branch managers",
                 "tags": [
                     "Staff"
                 ],
                 "parameters": [
                     {
+                        "name": "term",
+                        "in": "query",
+                        "description": "Search staff full name or email (case-insensitive).",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "sarah"
+                    },
+                    {
                         "name": "page",
                         "in": "query",
+                        "description": "Page number.",
                         "schema": {
-                            "type": "string",
-                            "default": 1
-                        }
+                            "type": "integer"
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 15
                     }
                 ],
                 "responses": {
@@ -1904,7 +2132,7 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "data": {
+                                        "results": {
                                             "type": "array",
                                             "items": {
                                                 "type": "string"
@@ -1915,7 +2143,7 @@
                                         }
                                     },
                                     "required": [
-                                        "data",
+                                        "results",
                                         "total"
                                     ]
                                 }

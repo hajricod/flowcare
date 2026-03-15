@@ -124,6 +124,23 @@ Optional custom output path:
 
 ## API Endpoints
 
+### Listing Response Format
+
+All paginated listing endpoints return the same shape:
+
+```json
+{
+	"results": [...],
+	"total": 125
+}
+```
+
+Supported listing query parameters:
+
+- `page` (default: `1`)
+- `size` (default: `15`)
+- `term` (optional case-insensitive search where supported)
+
 ### Public (no auth required)
 
 | Method | Endpoint | Description |

@@ -7,10 +7,14 @@ use App\Models\AuditLog;
 use App\Models\ServiceType;
 use App\Models\StaffServiceType;
 use App\Models\User;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\Request;
 
 class StaffController extends Controller
 {
+    #[QueryParameter('term', description: 'Search staff full name or email (case-insensitive).', type: 'string', required: false, example: 'sarah')]
+    #[QueryParameter('page', description: 'Page number.', type: 'integer', required: false, example: 1)]
+    #[QueryParameter('size', description: 'Number of records per page.', type: 'integer', required: false, example: 15)]
     /**
      * List staff and branch managers.
      *
@@ -19,6 +23,10 @@ class StaffController extends Controller
      *
      * Branch managers are scoped to their branch. Supports optional `term`
      * filtering and pagination.
+    *
+    * Response shape:
+    * - `results`: records for the current page
+    * - `total`: total matching records
      *
      * Responses:
      * - 200: Paginated staff list with assigned service types
@@ -41,7 +49,7 @@ class StaffController extends Controller
 
         $perPage = (int) $request->query('size', 15);
         $results = $query->with('staffServiceTypes')->paginate($perPage, ['*'], 'page', $request->query('page', 1));
-        return response()->json(['data' => $results->items(), 'total' => $results->total()]);
+        return response()->json(['results' => $results->items(), 'total' => $results->total()]);
     }
 
     /**

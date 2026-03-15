@@ -9,6 +9,7 @@ use App\Models\ServiceType;
 use App\Models\Setting;
 use App\Models\Slot;
 use App\Models\User;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
@@ -40,6 +41,10 @@ class SlotController extends Controller
         return null;
     }
 
+    #[QueryParameter('date', description: 'Filter slots by date (YYYY-MM-DD).', type: 'string', required: false, example: '2026-03-20')]
+    #[QueryParameter('term', description: 'Search slot id or assigned staff name/email (case-insensitive).', type: 'string', required: false, example: 'fatima')]
+    #[QueryParameter('page', description: 'Page number.', type: 'integer', required: false, example: 1)]
+    #[QueryParameter('size', description: 'Number of records per page.', type: 'integer', required: false, example: 15)]
     /**
      * List available slots for a branch service.
      *
@@ -47,7 +52,12 @@ class SlotController extends Controller
      * Auth: Public
      *
      * Returns active slots not already reserved by BOOKED or CHECKED_IN
-     * appointments. Supports optional `date` filter and pagination.
+    * appointments. Supports optional `date` filter, optional case-insensitive
+    * `term` search, and pagination.
+    *
+    * Response shape:
+    * - `results`: records for the current page
+    * - `total`: total matching records
      *
      * Responses:
      * - 200: Paginated available slot list
@@ -66,9 +76,17 @@ class SlotController extends Controller
             $query->whereDate('start_at', $date);
         }
 
+        if ($request->filled('term')) {
+            $term = '%' . $request->term . '%';
+            $query->where(function ($q) use ($term) {
+                $q->where('id', 'ilike', $term)
+                    ->orWhereHas('staff', fn ($s) => $s->where('full_name', 'ilike', $term)->orWhere('email', 'ilike', $term));
+            });
+        }
+
         $perPage = (int) $request->query('size', 15);
         $results = $query->paginate($perPage, ['*'], 'page', $request->query('page', 1));
-        return response()->json(['data' => $results->items(), 'total' => $results->total()]);
+        return response()->json(['results' => $results->items(), 'total' => $results->total()]);
     }
 
     /**
@@ -234,28 +252,48 @@ class SlotController extends Controller
         return response()->json(['message' => 'Slot soft-deleted.']);
     }
 
+    #[QueryParameter('term', description: 'Search by slot id, branch, service, or staff (case-insensitive).', type: 'string', required: false, example: 'muscat')]
+    #[QueryParameter('page', description: 'Page number.', type: 'integer', required: false, example: 1)]
+    #[QueryParameter('size', description: 'Number of records per page.', type: 'integer', required: false, example: 15)]
     /**
      * List soft-deleted slots.
      *
      * Endpoint: GET /api/admin/slots/trashed
      * Auth: ADMIN
      *
-     * Returns only soft-deleted slots with pagination.
+    * Returns only soft-deleted slots with optional case-insensitive `term`
+    * search and pagination.
+    *
+    * Response shape:
+    * - `results`: records for the current page
+    * - `total`: total matching records
      *
      * Responses:
      * - 200: Paginated trashed slot list
      */
     public function trashed(Request $request)
     {
+        $query = Slot::onlyTrashed()
+            ->with(['branch', 'serviceType', 'staff']);
+
+        if ($request->filled('term')) {
+            $term = '%' . $request->term . '%';
+            $query->where(function ($q) use ($term) {
+                $q->where('id', 'ilike', $term)
+                    ->orWhereHas('branch', fn ($b) => $b->where('name', 'ilike', $term)->orWhere('city', 'ilike', $term))
+                    ->orWhereHas('serviceType', fn ($s) => $s->where('name', 'ilike', $term))
+                    ->orWhereHas('staff', fn ($s) => $s->where('full_name', 'ilike', $term)->orWhere('email', 'ilike', $term));
+            });
+        }
+
         $perPage = (int) $request->query('size', 15);
         $page = (int) $request->query('page', 1);
 
-        $results = Slot::onlyTrashed()
-            ->with(['branch', 'serviceType', 'staff'])
+        $results = $query
             ->orderBy('deleted_at', 'desc')
             ->paginate($perPage, ['*'], 'page', $page);
 
-        return response()->json(['data' => $results->items(), 'total' => $results->total()]);
+        return response()->json(['results' => $results->items(), 'total' => $results->total()]);
     }
 
     /**

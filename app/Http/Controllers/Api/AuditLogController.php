@@ -4,17 +4,26 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\Request;
 
 class AuditLogController extends Controller
 {
+    #[QueryParameter('term', description: 'Search by action, entity, actor, role, or branch (case-insensitive).', type: 'string', required: false, example: 'appointment')]
+    #[QueryParameter('page', description: 'Page number.', type: 'integer', required: false, example: 1)]
+    #[QueryParameter('size', description: 'Number of records per page.', type: 'integer', required: false, example: 15)]
     /**
      * List audit logs for staff operations.
      *
      * Endpoint: GET /api/manage/audit-logs
      * Auth: STAFF, BRANCH_MANAGER, ADMIN
      *
-     * Staff and branch managers are limited to their branch logs. Supports pagination.
+    * Staff and branch managers are limited to their branch logs. Supports
+    * pagination and optional case-insensitive `term` search.
+    *
+    * Response shape:
+    * - `results`: records for the current page
+    * - `total`: total matching records
      *
      * Responses:
      * - 200: Paginated audit log list
@@ -24,12 +33,21 @@ class AuditLogController extends Controller
         return $this->paginateLogs($request);
     }
 
+    #[QueryParameter('term', description: 'Search by action, entity, actor, role, or branch (case-insensitive).', type: 'string', required: false, example: 'appointment')]
+    #[QueryParameter('page', description: 'Page number.', type: 'integer', required: false, example: 1)]
+    #[QueryParameter('size', description: 'Number of records per page.', type: 'integer', required: false, example: 15)]
     /**
      * List all audit logs for administrators.
      *
      * Endpoint: GET /api/admin/audit-logs
      * Auth: ADMIN
      *
+    * Supports pagination and optional case-insensitive `term` search.
+    *
+    * Response shape:
+    * - `results`: records for the current page
+    * - `total`: total matching records
+    *
      * Responses:
      * - 200: Paginated audit log list
      */
@@ -94,10 +112,22 @@ class AuditLogController extends Controller
 
         if ($user->isStaff() || $user->isBranchManager()) {
             if (! $user->branch_id) {
-                return response()->json(['data' => [], 'total' => 0]);
+                return response()->json(['results' => [], 'total' => 0]);
             }
 
             $query->where('branch_id', $user->branch_id);
+        }
+
+        if ($request->filled('term')) {
+            $term = '%' . $request->term . '%';
+            $query->where(function ($q) use ($term) {
+                $q->where('action_type', 'ilike', $term)
+                    ->orWhere('entity_type', 'ilike', $term)
+                    ->orWhere('entity_id', 'ilike', $term)
+                    ->orWhere('actor_id', 'ilike', $term)
+                    ->orWhere('actor_role', 'ilike', $term)
+                    ->orWhere('branch_id', 'ilike', $term);
+            });
         }
 
         $perPage = (int) $request->query('size', 15);
@@ -105,6 +135,6 @@ class AuditLogController extends Controller
         $results = $query->orderBy('created_at', 'desc')
             ->paginate($perPage, ['*'], 'page', $page);
 
-        return response()->json(['data' => $results->items(), 'total' => $results->total()]);
+        return response()->json(['results' => $results->items(), 'total' => $results->total()]);
     }
 }

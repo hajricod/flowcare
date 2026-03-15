@@ -4,19 +4,28 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class CustomerController extends Controller
 {
+    #[QueryParameter('term', description: 'Search customer full name, email, or username (case-insensitive).', type: 'string', required: false, example: 'ahmed')]
+    #[QueryParameter('page', description: 'Page number.', type: 'integer', required: false, example: 1)]
+    #[QueryParameter('size', description: 'Number of records per page.', type: 'integer', required: false, example: 15)]
     /**
      * List customers for management.
      *
      * Endpoint: GET /api/manage/customers
      * Auth: BRANCH_MANAGER, ADMIN
      *
-        * Supports optional `term` search across name, email, and username, with
-        * pagination. Includes `id_image_url` when an ID image is available.
+      * Supports optional case-insensitive `term` search across name, email, and
+      * username, with pagination. Includes `id_image_url` for admins when an ID
+      * image is available.
+      *
+      * Response shape:
+      * - `results`: records for the current page
+      * - `total`: total matching records
      *
      * Responses:
      * - 200: Paginated customer list
@@ -55,7 +64,7 @@ class CustomerController extends Controller
             })
             ->values();
 
-        return response()->json(['data' => $data, 'total' => $results->total()]);
+        return response()->json(['results' => $data, 'total' => $results->total()]);
     }
 
     /**
@@ -64,7 +73,7 @@ class CustomerController extends Controller
      * Endpoint: GET /api/manage/customers/{id}
      * Auth: BRANCH_MANAGER, ADMIN
      *
-    * Includes `id_image_url` for admins when an ID image is available.
+        * Includes `id_image_url` for admins when an ID image is available.
      *
      * Responses:
      * - 200: Customer found
@@ -89,8 +98,8 @@ class CustomerController extends Controller
     /**
      * Download customer ID image.
      *
-    * Endpoint: GET /api/admin/customers/{id}/id-image
-    * Auth: ADMIN
+        * Endpoint: GET /api/admin/customers/{id}/id-image
+        * Auth: ADMIN
      *
      * Responses:
      * - 200: File download

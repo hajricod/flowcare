@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 class BranchController extends Controller
 {
     #[QueryParameter('term', description: 'Search branch name or city (case-insensitive).', type: 'string', required: false, example: 'muscat')]
+    #[QueryParameter('page', description: 'Page number.', type: 'integer', required: false, example: 1)]
+    #[QueryParameter('size', description: 'Number of records per page.', type: 'integer', required: false, example: 15)]
     /**
     * List active branches with optional search.
     *
@@ -17,6 +19,10 @@ class BranchController extends Controller
     * Auth: Public
     *
     * Supports pagination and optional `term` filtering by branch name or city.
+    *
+    * Response shape:
+    * - `results`: records for the current page
+    * - `total`: total matching records
     *
     * Responses:
     * - 200: Paginated list of active branches
@@ -34,6 +40,6 @@ class BranchController extends Controller
         }
         $perPage = (int) $request->query('size', 15);
         $results = $query->paginate($perPage, ['*'], 'page', $request->query('page', 1));
-        return response()->json(['data' => $results->items(), 'total' => $results->total()]);
+        return response()->json(['results' => $results->items(), 'total' => $results->total()]);
     }
 }

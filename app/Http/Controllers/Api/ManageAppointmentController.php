@@ -11,6 +11,9 @@ use Illuminate\Http\Request;
 class ManageAppointmentController extends Controller
 {
     #[QueryParameter('status', description: 'Filter appointments by status (e.g., BOOKED, CHECKED_IN, COMPLETED, NO_SHOW, CANCELLED ).', type: 'string', required: false, example: 'BOOKED')]
+    #[QueryParameter('term', description: 'Search by status, notes, customer, service, or branch (case-insensitive).', type: 'string', required: false, example: 'booked')]
+    #[QueryParameter('page', description: 'Page number.', type: 'integer', required: false, example: 1)]
+    #[QueryParameter('size', description: 'Number of records per page.', type: 'integer', required: false, example: 15)]
     /**
      * List appointments for operational staff views.
      *
@@ -18,7 +21,13 @@ class ManageAppointmentController extends Controller
      * Auth: STAFF, BRANCH_MANAGER, ADMIN
      *
      * Branch managers are limited to their branch; staff are limited to their own
-     * assigned appointments. Supports optional `status` of (BOOKED, CHECKED_IN, COMPLETED, NO_SHOW, CANCELLED ) filtering and pagination.
+    * assigned appointments. Supports optional `status` of (BOOKED, CHECKED_IN,
+    * COMPLETED, NO_SHOW, CANCELLED), optional case-insensitive `term` search,
+    * and pagination.
+    *
+    * Response shape:
+    * - `results`: records for the current page
+    * - `total`: total matching records
      *
      * Responses:
      * - 200: Paginated managed appointment list
@@ -38,9 +47,23 @@ class ManageAppointmentController extends Controller
             $query->where('status', $request->status);
         }
 
+        if ($request->filled('term')) {
+            $term = '%' . $request->term . '%';
+            $query->where(function ($q) use ($term) {
+                $q->where('status', 'ilike', $term)
+                    ->orWhere('notes', 'ilike', $term)
+                    ->orWhereHas('customer', fn ($c) => $c
+                        ->where('full_name', 'ilike', $term)
+                        ->orWhere('email', 'ilike', $term)
+                        ->orWhere('username', 'ilike', $term))
+                    ->orWhereHas('branch', fn ($b) => $b->where('name', 'ilike', $term)->orWhere('city', 'ilike', $term))
+                    ->orWhereHas('serviceType', fn ($s) => $s->where('name', 'ilike', $term));
+            });
+        }
+
         $perPage = (int) $request->query('size', 15);
         $results = $query->paginate($perPage, ['*'], 'page', $request->query('page', 1));
-        return response()->json(['data' => $results->items(), 'total' => $results->total()]);
+        return response()->json(['results' => $results->items(), 'total' => $results->total()]);
     }
 
     /**

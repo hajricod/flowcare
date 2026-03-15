@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Appointment;
 use App\Models\Slot;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -87,6 +88,9 @@ class AppointmentController extends Controller
         return response()->json(['data' => $appointment->load(['slot', 'serviceType', 'branch', 'staff'])], 201);
     }
 
+    #[QueryParameter('term', description: 'Search by appointment status, notes, service type, or branch (case-insensitive).', type: 'string', required: false, example: 'confirmed')]
+    #[QueryParameter('page', description: 'Page number.', type: 'integer', required: false, example: 1)]
+    #[QueryParameter('size', description: 'Number of records per page.', type: 'integer', required: false, example: 15)]
     /**
      * List appointments for the authenticated customer.
      *
@@ -96,6 +100,11 @@ class AppointmentController extends Controller
      * Supports pagination with query parameters:
      * - page (default: 1)
      * - size (default: 15)
+    * - term (optional case-insensitive search over status, notes, branch, service)
+    *
+    * Response shape:
+    * - `results`: records for the current page
+    * - `total`: total matching records
      *
      * Responses:
      * - 200: Paginated appointment list with total count
@@ -103,11 +112,22 @@ class AppointmentController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+        $query = Appointment::where('customer_id', $user->id)
+            ->with(['slot', 'serviceType', 'branch', 'staff']);
+
+        if ($request->filled('term')) {
+            $term = '%' . $request->term . '%';
+            $query->where(function ($q) use ($term) {
+                $q->where('status', 'ilike', $term)
+                    ->orWhere('notes', 'ilike', $term)
+                    ->orWhereHas('branch', fn ($b) => $b->where('name', 'ilike', $term)->orWhere('city', 'ilike', $term))
+                    ->orWhereHas('serviceType', fn ($s) => $s->where('name', 'ilike', $term));
+            });
+        }
+
         $perPage = (int) $request->query('size', 15);
-        $results = Appointment::where('customer_id', $user->id)
-            ->with(['slot', 'serviceType', 'branch', 'staff'])
-            ->paginate($perPage, ['*'], 'page', $request->query('page', 1));
-        return response()->json(['data' => $results->items(), 'total' => $results->total()]);
+        $results = $query->paginate($perPage, ['*'], 'page', $request->query('page', 1));
+        return response()->json(['results' => $results->items(), 'total' => $results->total()]);
     }
 
     /**
