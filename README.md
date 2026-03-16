@@ -11,6 +11,7 @@ A RESTful API backend built with **Laravel 12** (PHP 8.3) and **PostgreSQL** for
 - **Rate limiting for customers**: daily booking cap and daily reschedule cap
 - **File uploads**: patient ID images and appointment attachments
 - **Soft-deleted slots** with configurable retention cleanup
+- **Background scheduling service** for automatic retention cleanup
 - **Audit logging** with CSV export
 - **Live queue count** per branch
 
@@ -206,7 +207,6 @@ Supported listing query parameters:
 | GET | `/api/admin/customers/{id}/id-image` | Download customer ID image |
 | GET | `/api/admin/slots/trashed` | List soft-deleted slots |
 | PUT | `/api/admin/settings/retention` | Set soft-delete retention days |
-| POST | `/api/admin/slots/cleanup` | Hard-delete expired soft-deleted slots |
 
 ## Example API Usage (curl)
 
@@ -410,9 +410,6 @@ curl -X PUT "$BASE_URL/admin/settings/retention" \
 	-H "Content-Type: application/json" \
 	-d '{"days":30}'
 
-# POST /api/admin/slots/cleanup
-curl -X POST "$BASE_URL/admin/slots/cleanup" \
-	-H "Authorization: Basic $ADMIN_AUTH"
 ```
 
 ## SSE Client Example (Browser)
@@ -513,6 +510,24 @@ Customer booking and rescheduling limits are enforced server-side:
 - `max_reschedules_per_appointment_per_day` (default: `2`)
 
 These values are stored in the `settings` table and are seeded by default.
+
+## Background Scheduling
+
+Expired soft-deleted slots are hard-deleted automatically by a scheduled artisan
+command:
+
+- Command: `php artisan slots:cleanup-expired`
+- Schedule: daily at `01:00`
+- Runtime service in Docker Compose: `scheduler`
+
+When using Docker Compose, start the application normally and the scheduler
+service will run in the background alongside the API container.
+
+If you run the app without Docker, add a system cron entry like this:
+
+```cron
+* * * * * cd /path/to/flowcare && php artisan schedule:run >> /dev/null 2>&1
+```
 
 ## License
 

@@ -4,9 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
-use App\Models\Appointment;
 use App\Models\ServiceType;
-use App\Models\Setting;
 use App\Models\Slot;
 use App\Models\User;
 use Dedoc\Scramble\Attributes\QueryParameter;
@@ -296,32 +294,4 @@ class SlotController extends Controller
         return response()->json(['results' => $results->items(), 'total' => $results->total()]);
     }
 
-    /**
-     * Permanently remove soft-deleted slots after retention period.
-     *
-     * Endpoint: POST /api/admin/slots/cleanup
-     * Auth: ADMIN
-     *
-     * Hard-deletes slots past configured retention and detaches related
-     * appointments by setting `slot_id` to null.
-     *
-     * Responses:
-     * - 200: Cleanup summary returned
-     */
-    public function cleanup(Request $request)
-    {
-        $user = $request->user();
-        $retentionDays = (int) Setting::get('soft_delete_retention_days', 30);
-        $cutoff = now()->subDays($retentionDays);
-
-        $slots = Slot::onlyTrashed()->where('deleted_at', '<=', $cutoff)->get();
-
-        foreach ($slots as $slot) {
-            Appointment::where('slot_id', $slot->id)->update(['slot_id' => null]);
-            AuditLog::log($user->id, $user->role, 'SLOT_HARD_DELETED', 'SLOT', $slot->id, ['reason' => 'retention_cleanup'], $slot->branch_id);
-            $slot->forceDelete();
-        }
-
-        return response()->json(['message' => "Hard-deleted {$slots->count()} slots."]);
-    }
 }

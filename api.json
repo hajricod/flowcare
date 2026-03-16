@@ -2625,41 +2625,6 @@
                 ]
             }
         },
-        "/admin/slots/cleanup": {
-            "post": {
-                "operationId": "slot.cleanup",
-                "description": "Endpoint: POST /api/admin/slots/cleanup\nAuth: ADMIN\n\nHard-deletes slots past configured retention and detaches related\nappointments by setting `slot_id` to null.\n\nResponses:\n- 200: Cleanup summary returned",
-                "summary": "Permanently remove soft-deleted slots after retention period",
-                "tags": [
-                    "Slot"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "basicAdmin": []
-                    }
-                ]
-            }
-        },
         "/manage/staff": {
             "get": {
                 "operationId": "staff.index",

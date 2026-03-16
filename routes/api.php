@@ -63,6 +63,5 @@ Route::middleware('auth.basic.custom')->group(function () {
         Route::get('/admin/customers/{id}/id-image', [CustomerController::class, 'getIdImage']);
         Route::get('/admin/slots/trashed', [SlotController::class, 'trashed']);
         Route::put('/admin/settings/retention', [SettingController::class, 'updateRetention']);
-        Route::post('/admin/slots/cleanup', [SlotController::class, 'cleanup']);
     });
 });
