@@ -149,6 +149,7 @@ Supported listing query parameters:
 | GET | `/api/branches/{id}/services` | List services for branch |
 | GET | `/api/branches/{id}/services/{svcId}/slots` | List available slots |
 | GET | `/api/branches/{id}/queue` | Live queue count |
+| GET | `/api/branches/{id}/queue/stream` | Live queue stream (SSE) |
 | POST | `/api/auth/register` | Register new customer (ID image required) |
 
 ### Auth Required
@@ -233,6 +234,9 @@ curl "$BASE_URL/branches/br_muscat_001/services/svc_mus_001/slots?date=2026-03-2
 
 # GET /api/branches/{branch}/queue
 curl "$BASE_URL/branches/br_muscat_001/queue"
+
+# GET /api/branches/{branch}/queue/stream (SSE)
+curl -N "$BASE_URL/branches/br_muscat_001/queue/stream?interval=2&duration=60"
 
 # POST /api/auth/register
 curl -X POST "$BASE_URL/auth/register" \
@@ -409,6 +413,51 @@ curl -X PUT "$BASE_URL/admin/settings/retention" \
 curl -X POST "$BASE_URL/admin/slots/cleanup" \
 	-H "Authorization: Basic $ADMIN_AUTH"
 ```
+
+## SSE Client Example (Browser)
+
+Use Server-Sent Events for live queue updates without polling.
+
+```html
+<div>
+	<strong>Branch:</strong> <span id="branch">br_muscat_001</span><br>
+	<strong>Live Queue Number:</strong> <span id="queue">-</span><br>
+	<strong>Updated At:</strong> <span id="updated">-</span>
+</div>
+
+<script>
+	const branchId = "br_muscat_001";
+	const streamUrl = `/api/branches/${branchId}/queue/stream?interval=2&duration=300`;
+
+	const queueEl = document.getElementById("queue");
+	const updatedEl = document.getElementById("updated");
+
+	const source = new EventSource(streamUrl);
+
+	source.addEventListener("queue.update", (event) => {
+		const payload = JSON.parse(event.data);
+		queueEl.textContent = String(payload.live_queue_number);
+		updatedEl.textContent = payload.timestamp;
+	});
+
+	source.addEventListener("queue.end", () => {
+		source.close();
+		// Reconnect after server-enforced duration ends.
+		setTimeout(() => window.location.reload(), 1000);
+	});
+
+	source.onerror = () => {
+		// Browser auto-reconnects for transient network/server interruptions.
+		console.warn("SSE connection issue. Waiting for automatic reconnect...");
+	};
+</script>
+```
+
+Notes:
+
+- `queue.update` carries `branch_id`, `live_queue_number`, `active_queue_count`, and `timestamp`.
+- `queue.end` is sent when the configured stream duration is reached.
+- For long-lived dashboards, reconnect automatically when `queue.end` arrives.
 
 ## Database Schema
 

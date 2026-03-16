@@ -18,6 +18,7 @@ Route::get('/branches', [BranchController::class, 'index']);
 Route::get('/branches/{branch}/services', [ServiceTypeController::class, 'byBranch']);
 Route::get('/branches/{branch}/services/{service}/slots', [SlotController::class, 'available']);
 Route::get('/branches/{branch}/queue', [QueueController::class, 'liveQueue']);
+Route::get('/branches/{branch}/queue/stream', [QueueController::class, 'streamQueue']);
 
 // Auth endpoints
 Route::post('/auth/register', [AuthController::class, 'register']);

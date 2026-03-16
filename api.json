@@ -1888,6 +1888,68 @@
                 "security": []
             }
         },
+        "/branches/{branchId}/queue/stream": {
+            "get": {
+                "operationId": "queue.streamQueue",
+                "description": "Endpoint: GET /api/branches/{branch}/queue/stream\nAuth: Public\n\nPushes periodic `queue.update` events and a final `queue.end` event when\nthe stream duration is reached.\n\nResponses:\n- 200: Event stream started\n- 404: Branch not found",
+                "summary": "Stream today's live queue number for a branch using SSE",
+                "tags": [
+                    "Queue"
+                ],
+                "parameters": [
+                    {
+                        "name": "branchId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "interval",
+                        "in": "query",
+                        "description": "Seconds between push updates (1 to 10).",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 2
+                    },
+                    {
+                        "name": "duration",
+                        "in": "query",
+                        "description": "Maximum stream duration in seconds (10 to 300).",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 60
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "text/event-stream": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Transfer-Encoding": {
+                                "required": true,
+                                "schema": {
+                                    "type": "string",
+                                    "enum": [
+                                        "chunked"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
         "/branches/{branchId}/services": {
             "get": {
                 "operationId": "serviceType.byBranch",
