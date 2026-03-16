@@ -41,11 +41,15 @@ services:
           name: flowcare-db
           property: password
       - key: SESSION_DRIVER
-        value: database
+        value: redis
       - key: CACHE_STORE
-        value: database
+        value: redis
       - key: QUEUE_CONNECTION
-        value: database
+        value: redis
+      - key: REDIS_CLIENT
+        value: phpredis
+      - key: REDIS_URL
+        sync: false
       - key: FILESYSTEM_DISK
         value: local
       - key: LOG_CHANNEL
@@ -90,11 +94,15 @@ services:
           name: flowcare-db
           property: password
       - key: SESSION_DRIVER
-        value: database
+        value: redis
       - key: CACHE_STORE
-        value: database
+        value: redis
       - key: QUEUE_CONNECTION
-        value: database
+        value: redis
+      - key: REDIS_CLIENT
+        value: phpredis
+      - key: REDIS_URL
+        sync: false
       - key: FILESYSTEM_DISK
         value: local
       - key: LOG_CHANNEL
