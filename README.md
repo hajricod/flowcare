@@ -42,9 +42,12 @@ php artisan key:generate
 ### 2. Run with Docker
 
 ```bash
-docker-compose up -d
-docker-compose exec app php artisan migrate --seed
+docker compose up -d --build
+docker compose exec laravel.test php artisan migrate --seed
 ```
+
+When using Docker Compose, the app, PostgreSQL, Redis, and scheduler services
+start together.
 
 ### 3. Run locally (with PostgreSQL running)
 
@@ -54,7 +57,7 @@ php artisan migrate --seed
 php artisan serve
 ```
 
-The API will be available at `http://localhost:8000`.
+The API will be available at `http://localhost/api`.
 
 ## Authentication
 
@@ -82,10 +85,79 @@ This project uses [`dedoc/scramble`](https://github.com/dedoc/scramble) for Open
 - URL: `/docs/api`
 - OpenAPI JSON: `/docs/api.json`
 
-When running locally via Sail, open:
+When running locally via Sail or Docker Compose, open:
 
 - `http://localhost/docs/api`
 - `http://localhost/docs/api.json`
+
+## Deployment
+
+### Docker image
+
+This repository now includes a production Docker image definition in `Dockerfile`.
+You can build it locally with:
+
+```bash
+docker build -t flowcare:latest .
+```
+
+Run it with environment variables and a reachable PostgreSQL database:
+
+```bash
+docker run --rm -p 8080:8080 \
+	-e APP_KEY="base64:replace-with-real-key" \
+	-e APP_URL="http://localhost:8080" \
+	-e DB_CONNECTION=pgsql \
+	-e DB_HOST=host.docker.internal \
+	-e DB_PORT=5432 \
+	-e DB_DATABASE=flowcare \
+	-e DB_USERNAME=sail \
+	-e DB_PASSWORD=password \
+	flowcare:latest
+```
+
+### Docker Compose deployment
+
+For VM-based deployment, copy the project to your server, create `.env`, then run:
+
+```bash
+docker compose up -d --build
+docker compose exec laravel.test php artisan key:generate
+docker compose exec laravel.test php artisan migrate --seed --force
+```
+
+### Cloud deployment on Render
+
+This repository includes a Render blueprint in `render.yaml` with:
+
+- `flowcare-api` web service
+- `flowcare-scheduler` background worker for Laravel scheduler
+- `flowcare-db` PostgreSQL database
+
+Deployment steps:
+
+1. Push this branch to GitHub.
+2. In Render, create a new Blueprint and point it to the repository.
+3. Review the generated services from `render.yaml`.
+4. Set a valid Laravel `APP_KEY` in both the web and worker services.
+5. After first deploy, open a Render shell and run:
+
+```bash
+php artisan migrate --seed --force
+```
+
+6. Use the generated Render URL as `APP_URL` if it was not auto-filled.
+
+Files used for cloud deployment:
+
+- `Dockerfile`
+- `render.yaml`
+
+### Live API URL
+
+A public live API URL cannot be provided directly from this repository alone.
+It is created only after deployment to your cloud account. After you deploy,
+use the generated provider URL as your live API base URL.
 
 ### Test endpoints with Try It
 

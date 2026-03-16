@@ -1,0 +1,108 @@
+services:
+  - type: web
+    name: flowcare-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeploy: true
+    healthCheckPath: /up
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_URL
+        fromService:
+          type: web
+          name: flowcare-api
+          property: url
+      - key: API_VERSION
+        value: 1.0.0
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromDatabase:
+          name: flowcare-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: flowcare-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: flowcare-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: flowcare-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: flowcare-db
+          property: password
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: FILESYSTEM_DISK
+        value: local
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: APP_KEY
+        sync: false
+
+  - type: worker
+    name: flowcare-scheduler
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: php artisan schedule:work --no-interaction
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: API_VERSION
+        value: 1.0.0
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromDatabase:
+          name: flowcare-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: flowcare-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: flowcare-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: flowcare-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: flowcare-db
+          property: password
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: FILESYSTEM_DISK
+        value: local
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: APP_KEY
+        sync: false
+
+databases:
+  - name: flowcare-db
+    databaseName: flowcare
+    user: flowcare
