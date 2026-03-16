@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Appointment;
+use App\Models\Setting;
 use App\Models\Slot;
 use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Database\QueryException;
@@ -28,6 +29,7 @@ class AppointmentController extends Controller
      *
      * Responses:
      * - 201: Appointment created
+     * - 429: Daily booking limit reached
      * - 422: Validation failed or slot is already full
      */
     public function store(Request $request)
@@ -38,6 +40,19 @@ class AppointmentController extends Controller
             'notes' => 'nullable|string',
             'attachment' => 'nullable|file|mimes:jpg,jpeg,png,gif,pdf|max:10240',
         ]);
+
+        $maxBookingsPerDay = (int) Setting::get('max_bookings_per_customer_per_day', 3);
+        if ($maxBookingsPerDay > 0) {
+            $todayBookings = Appointment::where('customer_id', $user->id)
+                ->whereDate('created_at', today())
+                ->count();
+
+            if ($todayBookings >= $maxBookingsPerDay) {
+                return response()->json([
+                    'message' => "Daily booking limit reached ({$maxBookingsPerDay}).",
+                ], 429);
+            }
+        }
 
         $slot = Slot::findOrFail($validated['slot_id']);
 
@@ -210,6 +225,7 @@ class AppointmentController extends Controller
      *
      * Responses:
      * - 200: Appointment rescheduled
+    * - 429: Daily reschedule limit reached
      * - 422: Validation failed or new slot is fully booked
      * - 404: Appointment not found for the authenticated customer
      */
@@ -221,6 +237,23 @@ class AppointmentController extends Controller
         $validated = $request->validate(['new_slot_id' => 'required|exists:slots,id']);
 
         $newSlot = Slot::findOrFail($validated['new_slot_id']);
+
+        $maxReschedulesPerDay = (int) Setting::get('max_reschedules_per_appointment_per_day', 2);
+        if ($maxReschedulesPerDay > 0) {
+            $todayReschedules = AuditLog::where('actor_id', $user->id)
+                ->where('action_type', 'APPOINTMENT_RESCHEDULED')
+                ->where('entity_type', 'APPOINTMENT')
+                ->where('entity_id', $appointment->id)
+                ->whereDate('created_at', today())
+                ->count();
+
+            if ($todayReschedules >= $maxReschedulesPerDay) {
+                return response()->json([
+                    'message' => "Daily reschedule limit reached ({$maxReschedulesPerDay}) for this appointment.",
+                ], 429);
+            }
+        }
+
         $existingCount = Appointment::where('slot_id', $newSlot->id)
             ->whereIn('status', self::ACTIVE_QUEUE_STATUSES)
             ->count();

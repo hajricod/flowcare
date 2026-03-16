@@ -8,6 +8,7 @@ A RESTful API backend built with **Laravel 12** (PHP 8.3) and **PostgreSQL** for
 - **Role-based access control**: ADMIN, BRANCH_MANAGER, STAFF, CUSTOMER
 - **Branch management** with service types and time slots
 - **Appointment booking** with queue number assignment
+- **Rate limiting for customers**: daily booking cap and daily reschedule cap
 - **File uploads**: patient ID images and appointment attachments
 - **Soft-deleted slots** with configurable retention cleanup
 - **Audit logging** with CSV export
@@ -503,6 +504,15 @@ Files are stored on the local disk under `storage/app/`:
 
 - Customer ID images: `uploads/customers/{uuid}.{ext}`
 - Appointment attachments: `uploads/appointments/{uuid}.{ext}`
+
+## Rate Limits
+
+Customer booking and rescheduling limits are enforced server-side:
+
+- `max_bookings_per_customer_per_day` (default: `3`)
+- `max_reschedules_per_appointment_per_day` (default: `2`)
+
+These values are stored in the `settings` table and are seeded by default.
 
 ## License
 

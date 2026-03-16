@@ -87,6 +87,8 @@ class DatabaseSeeder extends Seeder
         }
 
         Setting::set('soft_delete_retention_days', '30');
+        Setting::set('max_bookings_per_customer_per_day', '3');
+        Setting::set('max_reschedules_per_appointment_per_day', '2');
 
         // Seed appointments
         foreach ($data['appointments'] as $appointment) {

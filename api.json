@@ -14,7 +14,7 @@
         "/appointments": {
             "post": {
                 "operationId": "appointment.store",
-                "description": "Endpoint: POST /api/appointments\nAuth: CUSTOMER\n\nValidates slot availability, assigns a branch queue number for the day,\noptionally stores an attachment, and returns the created appointment with\nrelated slot, service type, branch, and staff details.\n\nResponses:\n- 201: Appointment created\n- 422: Validation failed or slot is already full",
+                "description": "Endpoint: POST /api/appointments\nAuth: CUSTOMER\n\nValidates slot availability, assigns a branch queue number for the day,\noptionally stores an attachment, and returns the created appointment with\nrelated slot, service type, branch, and staff details.\n\nResponses:\n- 201: Appointment created\n- 429: Daily booking limit reached\n- 422: Validation failed or slot is already full",
                 "summary": "Create a new appointment for the authenticated customer",
                 "tags": [
                     "Appointment"
@@ -167,6 +167,24 @@
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
+                    },
+                    "429": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -637,7 +655,7 @@
         "/appointments/{id}/reschedule": {
             "put": {
                 "operationId": "appointment.reschedule",
-                "description": "Endpoint: PUT /api/appointments/{id}/reschedule\nAuth: CUSTOMER\n\nRequest body:\n- new_slot_id (required)\n\nValidates that the new slot exists and is not fully booked, then updates\nslot, staff, branch, and service type references on the appointment.\n\nResponses:\n- 200: Appointment rescheduled\n- 422: Validation failed or new slot is fully booked\n- 404: Appointment not found for the authenticated customer",
+                "description": "Endpoint: PUT /api/appointments/{id}/reschedule\nAuth: CUSTOMER\n\nRequest body:\n- new_slot_id (required)\n\nValidates that the new slot exists and is not fully booked, then updates\nslot, staff, branch, and service type references on the appointment.\n\nResponses:\n- 200: Appointment rescheduled\n- 429: Daily reschedule limit reached\n- 422: Validation failed or new slot is fully booked\n- 404: Appointment not found for the authenticated customer",
                 "summary": "Reschedule a customer appointment to a new slot",
                 "tags": [
                     "Appointment"
@@ -785,6 +803,24 @@
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
+                    },
+                    "429": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
