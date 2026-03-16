@@ -4,12 +4,33 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Models\ServiceType;
 use App\Models\StaffServiceType;
 use App\Models\User;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\Request;
 
 class StaffController extends Controller
 {
+    #[QueryParameter('term', description: 'Search staff full name or email (case-insensitive).', type: 'string', required: false, example: 'sarah')]
+    #[QueryParameter('page', description: 'Page number.', type: 'integer', required: false, example: 1)]
+    #[QueryParameter('size', description: 'Number of records per page.', type: 'integer', required: false, example: 15)]
+    /**
+     * List staff and branch managers.
+     *
+     * Endpoint: GET /api/manage/staff
+     * Auth: BRANCH_MANAGER, ADMIN
+     *
+     * Branch managers are scoped to their branch. Supports optional `term`
+     * filtering and pagination.
+    *
+    * Response shape:
+    * - `results`: records for the current page
+    * - `total`: total matching records
+     *
+     * Responses:
+     * - 200: Paginated staff list with assigned service types
+     */
     public function index(Request $request)
     {
         $user = $request->user();
@@ -28,13 +49,32 @@ class StaffController extends Controller
 
         $perPage = (int) $request->query('size', 15);
         $results = $query->with('staffServiceTypes')->paginate($perPage, ['*'], 'page', $request->query('page', 1));
-        return response()->json(['data' => $results->items(), 'total' => $results->total()]);
+        return response()->json(['results' => $results->items(), 'total' => $results->total()]);
     }
 
+    /**
+     * Assign branch and/or service types to a staff user.
+     *
+     * Endpoint: PUT /api/manage/staff/{id}/assign
+     * Auth: BRANCH_MANAGER, ADMIN
+     *
+     * Branch managers can only assign within their own branch and to service
+     * types that belong to that branch.
+     *
+     * Responses:
+     * - 200: Assignment updated
+     * - 403: Forbidden by branch scope rules
+     * - 404: Staff not found
+     * - 422: Validation failed
+     */
     public function assign(Request $request, string $id)
     {
         $user = $request->user();
         $staff = User::findOrFail($id);
+
+        if ($user->isBranchManager() && $staff->branch_id !== $user->branch_id) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
 
         $validated = $request->validate([
             'branch_id' => 'nullable|exists:branches,id',
@@ -43,10 +83,23 @@ class StaffController extends Controller
         ]);
 
         if (isset($validated['branch_id'])) {
+            if ($user->isBranchManager() && $validated['branch_id'] !== $user->branch_id) {
+                return response()->json(['message' => 'Forbidden.'], 403);
+            }
             $staff->update(['branch_id' => $validated['branch_id']]);
         }
 
         if (isset($validated['service_type_ids'])) {
+            if ($user->isBranchManager()) {
+                $count = ServiceType::whereIn('id', $validated['service_type_ids'])
+                    ->where('branch_id', $user->branch_id)
+                    ->count();
+
+                if ($count !== count($validated['service_type_ids'])) {
+                    return response()->json(['message' => 'Forbidden.'], 403);
+                }
+            }
+
             StaffServiceType::where('staff_id', $staff->id)->delete();
             foreach ($validated['service_type_ids'] as $svcId) {
                 StaffServiceType::firstOrCreate(['staff_id' => $staff->id, 'service_type_id' => $svcId]);

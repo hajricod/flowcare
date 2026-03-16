@@ -1,0 +1,3000 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "FlowCare API Docs",
+        "version": "1.0.0",
+        "description": "FlowCare Queue & Appointment Booking API.\n\nAuthentication:\n- Protected endpoints use HTTP Basic Authentication.\n- Use the Authorize button and choose the scheme that matches the endpoint role requirement.\n\nTest Accounts by Role:\n- CUSTOMER: username `cust_ahmed`, password `Customer@123`\n- STAFF: username `staff_muscat_1`, password `Staff@123`\n- BRANCH_MANAGER: username `mgr_muscat`, password `Manager@123`\n- ADMIN: username `admin`, password `Admin@123`\n\nNote: Demo credentials are for documentation/testing only. Do not use real production credentials."
+    },
+    "servers": [
+        {
+            "url": "http://localhost/api"
+        }
+    ],
+    "paths": {
+        "/appointments": {
+            "post": {
+                "operationId": "appointment.store",
+                "description": "Endpoint: POST /api/appointments\nAuth: CUSTOMER\n\nValidates slot availability, assigns a branch queue number for the day,\noptionally stores an attachment, and returns the created appointment with\nrelated slot, service type, branch, and staff details.\n\nResponses:\n- 201: Appointment created\n- 429: Daily booking limit reached\n- 422: Validation failed or slot is already full",
+                "summary": "Create a new appointment for the authenticated customer",
+                "tags": [
+                    "Appointment"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "slot_id": {
+                                        "type": "string"
+                                    },
+                                    "notes": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "attachment": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "format": "binary",
+                                        "contentMediaType": "application/octet-stream",
+                                        "maxLength": 10240
+                                    }
+                                },
+                                "required": [
+                                    "slot_id"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "customer_id": {
+                                                    "type": "string"
+                                                },
+                                                "branch_id": {
+                                                    "type": "string"
+                                                },
+                                                "service_type_id": {
+                                                    "type": "string"
+                                                },
+                                                "slot_id": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "staff_id": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "notes": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "attachment_path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "attachment_original_name": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "queue_number": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "created_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "format": "date-time"
+                                                },
+                                                "attachment_url": {
+                                                    "type": "string"
+                                                },
+                                                "live_queue_position": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "customer_id",
+                                                "branch_id",
+                                                "service_type_id",
+                                                "slot_id",
+                                                "staff_id",
+                                                "status",
+                                                "notes",
+                                                "attachment_path",
+                                                "attachment_original_name",
+                                                "queue_number",
+                                                "created_at",
+                                                "updated_at",
+                                                "attachment_url",
+                                                "live_queue_position"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "429": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "basicCustomer": []
+                    }
+                ]
+            },
+            "get": {
+                "operationId": "appointment.index",
+                "description": "Endpoint: GET /api/appointments\nAuth: CUSTOMER\n\nSupports pagination with query parameters:\n- page (default: 1)\n- size (default: 15)\n- term (optional case-insensitive search over status, notes, branch, service)\n\nEach appointment includes `live_queue_position` (null when not in an active\nqueue state).\n\nResponse shape:\n- `results`: records for the current page\n- `total`: total matching records\n\nResponses:\n- 200: Paginated appointment list with total count",
+                "summary": "List appointments for the authenticated customer",
+                "tags": [
+                    "Appointment"
+                ],
+                "parameters": [
+                    {
+                        "name": "term",
+                        "in": "query",
+                        "description": "Search by appointment status, notes, service type, or branch (case-insensitive).",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "confirmed"
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 15
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "customer_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "branch_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "service_type_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "slot_id": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "staff_id": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "status": {
+                                                        "type": "string"
+                                                    },
+                                                    "notes": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "attachment_path": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "attachment_original_name": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "queue_number": {
+                                                        "type": [
+                                                            "integer",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "created_at": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ],
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ],
+                                                        "format": "date-time"
+                                                    },
+                                                    "attachment_url": {
+                                                        "type": "string"
+                                                    },
+                                                    "live_queue_position": {
+                                                        "type": [
+                                                            "integer",
+                                                            "null"
+                                                        ],
+                                                        "minimum": 0
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "customer_id",
+                                                    "branch_id",
+                                                    "service_type_id",
+                                                    "slot_id",
+                                                    "staff_id",
+                                                    "status",
+                                                    "notes",
+                                                    "attachment_path",
+                                                    "attachment_original_name",
+                                                    "queue_number",
+                                                    "created_at",
+                                                    "updated_at",
+                                                    "attachment_url",
+                                                    "live_queue_position"
+                                                ]
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "results",
+                                        "total"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "basicCustomer": []
+                    }
+                ]
+            }
+        },
+        "/appointments/{id}": {
+            "get": {
+                "operationId": "appointment.show",
+                "description": "Endpoint: GET /api/appointments/{id}\nAuth: CUSTOMER\n\nReturns appointment details and related entities. When an attachment exists,\nan `attachment_url` field is included for downloading it. Includes\n`live_queue_position` (null when not in an active queue state).\n\nResponses:\n- 200: Appointment found\n- 404: Appointment not found for the authenticated customer",
+                "summary": "Get details of a single customer appointment",
+                "tags": [
+                    "Appointment"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "customer_id": {
+                                                    "type": "string"
+                                                },
+                                                "branch_id": {
+                                                    "type": "string"
+                                                },
+                                                "service_type_id": {
+                                                    "type": "string"
+                                                },
+                                                "slot_id": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "staff_id": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "notes": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "attachment_path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "attachment_original_name": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "queue_number": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "created_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "format": "date-time"
+                                                },
+                                                "attachment_url": {
+                                                    "type": "string"
+                                                },
+                                                "live_queue_position": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "customer_id",
+                                                "branch_id",
+                                                "service_type_id",
+                                                "slot_id",
+                                                "staff_id",
+                                                "status",
+                                                "notes",
+                                                "attachment_path",
+                                                "attachment_original_name",
+                                                "queue_number",
+                                                "created_at",
+                                                "updated_at",
+                                                "attachment_url",
+                                                "live_queue_position"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "basicCustomer": []
+                    }
+                ]
+            },
+            "delete": {
+                "operationId": "appointment.cancel",
+                "description": "Endpoint: DELETE /api/appointments/{id}\nAuth: CUSTOMER\n\nOnly appointments in BOOKED or CHECKED_IN status can be cancelled.\nCancellation is recorded in the audit log.\n\nResponses:\n- 200: Appointment cancelled\n- 422: Appointment cannot be cancelled in current status\n- 404: Appointment not found for the authenticated customer",
+                "summary": "Cancel a customer appointment",
+                "tags": [
+                    "Appointment"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "customer_id": {
+                                                    "type": "string"
+                                                },
+                                                "branch_id": {
+                                                    "type": "string"
+                                                },
+                                                "service_type_id": {
+                                                    "type": "string"
+                                                },
+                                                "slot_id": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "staff_id": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "notes": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "attachment_path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "attachment_original_name": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "queue_number": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "created_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "format": "date-time"
+                                                },
+                                                "attachment_url": {
+                                                    "type": "string"
+                                                },
+                                                "live_queue_position": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "customer_id",
+                                                "branch_id",
+                                                "service_type_id",
+                                                "slot_id",
+                                                "staff_id",
+                                                "status",
+                                                "notes",
+                                                "attachment_path",
+                                                "attachment_original_name",
+                                                "queue_number",
+                                                "created_at",
+                                                "updated_at",
+                                                "attachment_url",
+                                                "live_queue_position"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Cannot cancel appointment in current status."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "basicCustomer": []
+                    }
+                ]
+            }
+        },
+        "/appointments/{id}/reschedule": {
+            "put": {
+                "operationId": "appointment.reschedule",
+                "description": "Endpoint: PUT /api/appointments/{id}/reschedule\nAuth: CUSTOMER\n\nRequest body:\n- new_slot_id (required)\n\nValidates that the new slot exists and is not fully booked, then updates\nslot, staff, branch, and service type references on the appointment.\n\nResponses:\n- 200: Appointment rescheduled\n- 429: Daily reschedule limit reached\n- 422: Validation failed or new slot is fully booked\n- 404: Appointment not found for the authenticated customer",
+                "summary": "Reschedule a customer appointment to a new slot",
+                "tags": [
+                    "Appointment"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "new_slot_id": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "new_slot_id"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "customer_id": {
+                                                    "type": "string"
+                                                },
+                                                "branch_id": {
+                                                    "type": "string"
+                                                },
+                                                "service_type_id": {
+                                                    "type": "string"
+                                                },
+                                                "slot_id": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "staff_id": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "notes": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "attachment_path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "attachment_original_name": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "queue_number": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "created_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "format": "date-time"
+                                                },
+                                                "attachment_url": {
+                                                    "type": "string"
+                                                },
+                                                "live_queue_position": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "customer_id",
+                                                "branch_id",
+                                                "service_type_id",
+                                                "slot_id",
+                                                "staff_id",
+                                                "status",
+                                                "notes",
+                                                "attachment_path",
+                                                "attachment_original_name",
+                                                "queue_number",
+                                                "created_at",
+                                                "updated_at",
+                                                "attachment_url",
+                                                "live_queue_position"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "429": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "basicCustomer": []
+                    }
+                ]
+            }
+        },
+        "/appointments/{id}/attachment": {
+            "get": {
+                "operationId": "appointment.getAttachment",
+                "description": "Endpoint: GET /api/appointments/{id}/attachment\nAuth: CUSTOMER, STAFF, BRANCH_MANAGER, ADMIN\n\nAccess rules:\n- Customer can download only their own appointment attachment\n- Staff can download only attachments for appointments assigned to them\n- Branch manager can download only attachments from their branch\n- Admin can download any appointment attachment\n\nResponses:\n- 200: File download\n- 403: Forbidden by ownership/scope rules\n- 404: Appointment or attachment not found",
+                "summary": "Download an appointment attachment",
+                "tags": [
+                    "Appointment"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Attachment not found."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Forbidden."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "basicCustomer": []
+                    },
+                    {
+                        "basicStaff": []
+                    },
+                    {
+                        "basicBranchManager": []
+                    },
+                    {
+                        "basicAdmin": []
+                    }
+                ]
+            }
+        },
+        "/manage/audit-logs": {
+            "get": {
+                "operationId": "auditLog.manageIndex",
+                "description": "Endpoint: GET /api/manage/audit-logs\nAuth: STAFF, BRANCH_MANAGER, ADMIN\n\nStaff and branch managers are limited to their branch logs. Supports\npagination and optional case-insensitive `term` search.\n\nResponse shape:\n- `results`: records for the current page\n- `total`: total matching records\n\nResponses:\n- 200: Paginated audit log list",
+                "summary": "List audit logs for staff operations",
+                "tags": [
+                    "AuditLog"
+                ],
+                "parameters": [
+                    {
+                        "name": "term",
+                        "in": "query",
+                        "description": "Search by action, entity, actor, role, or branch (case-insensitive).",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "appointment"
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 15
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "results": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "results",
+                                                "total"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "results": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "minItems": 0,
+                                                    "maxItems": 0,
+                                                    "additionalItems": false
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "results",
+                                                "total"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "basicStaff": []
+                    },
+                    {
+                        "basicBranchManager": []
+                    },
+                    {
+                        "basicAdmin": []
+                    }
+                ]
+            }
+        },
+        "/admin/audit-logs": {
+            "get": {
+                "operationId": "auditLog.adminIndex",
+                "description": "Endpoint: GET /api/admin/audit-logs\nAuth: ADMIN\n\nSupports pagination and optional case-insensitive `term` search.\n\nResponse shape:\n- `results`: records for the current page\n- `total`: total matching records\n\nResponses:\n- 200: Paginated audit log list",
+                "summary": "List all audit logs for administrators",
+                "tags": [
+                    "AuditLog"
+                ],
+                "parameters": [
+                    {
+                        "name": "term",
+                        "in": "query",
+                        "description": "Search by action, entity, actor, role, or branch (case-insensitive).",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "appointment"
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 15
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "results": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "results",
+                                                "total"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "results": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "minItems": 0,
+                                                    "maxItems": 0,
+                                                    "additionalItems": false
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "results",
+                                                "total"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "basicAdmin": []
+                    }
+                ]
+            }
+        },
+        "/admin/audit-logs/export": {
+            "get": {
+                "operationId": "auditLog.export",
+                "description": "Endpoint: GET /api/admin/audit-logs/export\nAuth: ADMIN\n\nStreams logs in descending creation order as a downloadable CSV file.\n\nResponses:\n- 200: CSV stream download",
+                "summary": "Export audit logs as CSV",
+                "tags": [
+                    "AuditLog"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "text/csv": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Transfer-Encoding": {
+                                "required": true,
+                                "schema": {
+                                    "type": "string",
+                                    "enum": [
+                                        "chunked"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "basicAdmin": []
+                    }
+                ]
+            }
+        },
+        "/auth/register": {
+            "post": {
+                "operationId": "auth.register",
+                "description": "Endpoint: POST /api/auth/register\nAuth: Public\n\nValidates customer details, stores an uploaded ID image, creates a CUSTOMER\nuser, and records the registration in the audit log.\n\nResponses:\n- 201: Customer account created\n- 422: Validation failed",
+                "summary": "Register a new customer account",
+                "tags": [
+                    "Auth"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "username": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "minLength": 6
+                                    },
+                                    "full_name": {
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "id_image": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "contentMediaType": "application/octet-stream",
+                                        "maxLength": 5120
+                                    }
+                                },
+                                "required": [
+                                    "username",
+                                    "email",
+                                    "password",
+                                    "full_name",
+                                    "id_image"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/User"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "security": []
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "operationId": "auth.login",
+                "description": "Endpoint: POST /api/auth/login\nAuth: Basic auth required\n\nReturns the authenticated user resolved by middleware.\n\nResponses:\n- 200: Authenticated user returned",
+                "summary": "Log in using basic authentication middleware context",
+                "tags": [
+                    "Auth"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/User"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "basicAuth": []
+                    }
+                ]
+            }
+        },
+        "/auth/me": {
+            "get": {
+                "operationId": "auth.me",
+                "description": "Endpoint: GET /api/auth/me\nAuth: Basic auth required\n\nResponses:\n- 200: Authenticated user returned",
+                "summary": "Return the currently authenticated user profile",
+                "tags": [
+                    "Auth"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/User"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "basicAuth": []
+                    }
+                ]
+            }
+        },
+        "/branches": {
+            "get": {
+                "operationId": "branch.index",
+                "description": "Endpoint: GET /api/branches\nAuth: Public\n\nSupports pagination and optional `term` filtering by branch name or city.\n\nResponse shape:\n- `results`: records for the current page\n- `total`: total matching records\n\nResponses:\n- 200: Paginated list of active branches",
+                "summary": "List active branches with optional search",
+                "tags": [
+                    "Branch"
+                ],
+                "parameters": [
+                    {
+                        "name": "term",
+                        "in": "query",
+                        "description": "Search branch name or city (case-insensitive).",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "muscat"
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 15
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "results",
+                                        "total"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/manage/customers": {
+            "get": {
+                "operationId": "customer.index",
+                "description": "Endpoint: GET /api/manage/customers\nAuth: BRANCH_MANAGER, ADMIN\n\nSupports optional case-insensitive `term` search across name, email, and\nusername, with pagination. Includes `id_image_url` for admins when an ID\nimage is available.\n\nResponse shape:\n- `results`: records for the current page\n- `total`: total matching records\n\nResponses:\n- 200: Paginated customer list",
+                "summary": "List customers for management",
+                "tags": [
+                    "Customer"
+                ],
+                "parameters": [
+                    {
+                        "name": "term",
+                        "in": "query",
+                        "description": "Search customer full name, email, or username (case-insensitive).",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "ahmed"
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 15
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "string"
+                                                            },
+                                                            "username": {
+                                                                "type": "string"
+                                                            },
+                                                            "email": {
+                                                                "type": "string"
+                                                            },
+                                                            "full_name": {
+                                                                "type": "string"
+                                                            },
+                                                            "phone": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "role": {
+                                                                "type": "string"
+                                                            },
+                                                            "branch_id": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "id_image_path": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "is_active": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "created_at": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ],
+                                                                "format": "date-time"
+                                                            },
+                                                            "updated_at": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ],
+                                                                "format": "date-time"
+                                                            },
+                                                            "id_image_url": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "username",
+                                                            "email",
+                                                            "full_name",
+                                                            "phone",
+                                                            "role",
+                                                            "branch_id",
+                                                            "id_image_path",
+                                                            "is_active",
+                                                            "created_at",
+                                                            "updated_at",
+                                                            "id_image_url"
+                                                        ]
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "string"
+                                                            },
+                                                            "username": {
+                                                                "type": "string"
+                                                            },
+                                                            "email": {
+                                                                "type": "string"
+                                                            },
+                                                            "full_name": {
+                                                                "type": "string"
+                                                            },
+                                                            "phone": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "role": {
+                                                                "type": "string"
+                                                            },
+                                                            "branch_id": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "id_image_path": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "is_active": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "created_at": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ],
+                                                                "format": "date-time"
+                                                            },
+                                                            "updated_at": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ],
+                                                                "format": "date-time"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "username",
+                                                            "email",
+                                                            "full_name",
+                                                            "phone",
+                                                            "role",
+                                                            "branch_id",
+                                                            "id_image_path",
+                                                            "is_active",
+                                                            "created_at",
+                                                            "updated_at"
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "results",
+                                        "total"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "basicBranchManager": []
+                    },
+                    {
+                        "basicAdmin": []
+                    }
+                ]
+            }
+        },
+        "/manage/customers/{id}": {
+            "get": {
+                "operationId": "customer.show",
+                "description": "Endpoint: GET /api/manage/customers/{id}\nAuth: BRANCH_MANAGER, ADMIN\n\nIncludes `id_image_url` for admins when an ID image is available.\n\nResponses:\n- 200: Customer found\n- 404: Customer not found",
+                "summary": "Get a single customer profile",
+                "tags": [
+                    "Customer"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "basicBranchManager": []
+                    },
+                    {
+                        "basicAdmin": []
+                    }
+                ]
+            }
+        },
+        "/admin/customers/{id}/id-image": {
+            "get": {
+                "operationId": "customer.getIdImage",
+                "description": "Endpoint: GET /api/admin/customers/{id}/id-image\nAuth: ADMIN\n\nResponses:\n- 200: File download\n- 404: Customer or ID image not found",
+                "summary": "Download customer ID image",
+                "tags": [
+                    "Customer"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "ID image not found."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "basicAdmin": []
+                    }
+                ]
+            }
+        },
+        "/manage/appointments": {
+            "get": {
+                "operationId": "manageAppointment.index",
+                "description": "Endpoint: GET /api/manage/appointments\nAuth: STAFF, BRANCH_MANAGER, ADMIN\n\nBranch managers are limited to their branch; staff are limited to their own\nassigned appointments. Supports optional `status` of (BOOKED, CHECKED_IN,\nCOMPLETED, NO_SHOW, CANCELLED), optional case-insensitive `term` search,\nand pagination.\n\nResponse shape:\n- `results`: records for the current page\n- `total`: total matching records\n\nResponses:\n- 200: Paginated managed appointment list",
+                "summary": "List appointments for operational staff views",
+                "tags": [
+                    "ManageAppointment"
+                ],
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter appointments by status (e.g., BOOKED, CHECKED_IN, COMPLETED, NO_SHOW, CANCELLED ).",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "BOOKED"
+                    },
+                    {
+                        "name": "term",
+                        "in": "query",
+                        "description": "Search by status, notes, customer, service, or branch (case-insensitive).",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "booked"
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 15
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "results",
+                                        "total"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "basicStaff": []
+                    },
+                    {
+                        "basicBranchManager": []
+                    },
+                    {
+                        "basicAdmin": []
+                    }
+                ]
+            }
+        },
+        "/manage/appointments/{id}/status": {
+            "put": {
+                "operationId": "manageAppointment.updateStatus",
+                "description": "Endpoint: PUT /api/manage/appointments/{id}/status\nAuth: STAFF, BRANCH_MANAGER, ADMIN\n\nAllowed statuses: CHECKED_IN, COMPLETED, NO_SHOW.\nEnforces branch/staff ownership scope and writes an audit log entry.\n\nResponses:\n- 200: Appointment status updated\n- 403: Forbidden by role scope rules\n- 404: Appointment not found\n- 422: Validation failed",
+                "summary": "Update appointment status by staff/manager/admin",
+                "tags": [
+                    "ManageAppointment"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "CHECKED_IN",
+                                            "COMPLETED",
+                                            "NO_SHOW"
+                                        ]
+                                    },
+                                    "notes": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "status"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Forbidden."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "security": [
+                    {
+                        "basicStaff": []
+                    },
+                    {
+                        "basicBranchManager": []
+                    },
+                    {
+                        "basicAdmin": []
+                    }
+                ]
+            }
+        },
+        "/branches/{branchId}/queue": {
+            "get": {
+                "operationId": "queue.liveQueue",
+                "description": "Endpoint: GET /api/branches/{branch}/queue\nAuth: Public\n\nComputes a real-time count of active appointments (BOOKED or CHECKED_IN)\ncreated today for the selected branch.\n\nResponses:\n- 200: Branch queue count returned\n- 404: Branch not found",
+                "summary": "Get today's live queue number for a branch",
+                "tags": [
+                    "Queue"
+                ],
+                "parameters": [
+                    {
+                        "name": "branchId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "branch_id": {
+                                            "type": "string"
+                                        },
+                                        "live_queue_number": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                        },
+                                        "active_queue_count": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                        }
+                                    },
+                                    "required": [
+                                        "branch_id",
+                                        "live_queue_number",
+                                        "active_queue_count"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/branches/{branchId}/queue/stream": {
+            "get": {
+                "operationId": "queue.streamQueue",
+                "description": "Endpoint: GET /api/branches/{branch}/queue/stream\nAuth: Public\n\nPushes periodic `queue.update` events and a final `queue.end` event when\nthe stream duration is reached.\n\nResponses:\n- 200: Event stream started\n- 404: Branch not found",
+                "summary": "Stream today's live queue number for a branch using SSE",
+                "tags": [
+                    "Queue"
+                ],
+                "parameters": [
+                    {
+                        "name": "branchId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "interval",
+                        "in": "query",
+                        "description": "Seconds between push updates (1 to 10).",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 2
+                    },
+                    {
+                        "name": "duration",
+                        "in": "query",
+                        "description": "Maximum stream duration in seconds (10 to 300).",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 60
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "text/event-stream": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Transfer-Encoding": {
+                                "required": true,
+                                "schema": {
+                                    "type": "string",
+                                    "enum": [
+                                        "chunked"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/branches/{branchId}/services": {
+            "get": {
+                "operationId": "serviceType.byBranch",
+                "description": "Endpoint: GET /api/branches/{branch}/services\nAuth: Public\n\nSupports pagination with `page` and `size`, plus optional case-insensitive\n`term` search across service name and description.\n\nResponse shape:\n- `results`: records for the current page\n- `total`: total matching records\n\nResponses:\n- 200: Paginated service type list\n- 404: Branch not found or inactive",
+                "summary": "List active service types for a specific active branch",
+                "tags": [
+                    "ServiceType"
+                ],
+                "parameters": [
+                    {
+                        "name": "branchId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "term",
+                        "in": "query",
+                        "description": "Search service name or description (case-insensitive).",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "consult"
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 15
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "results",
+                                        "total"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/admin/settings/retention": {
+            "put": {
+                "operationId": "setting.updateRetention",
+                "description": "Endpoint: PUT /api/admin/settings/retention\nAuth: ADMIN\n\nRequest body:\n- days (required, integer >= 1)\n\nResponses:\n- 200: Retention setting updated\n- 422: Validation failed",
+                "summary": "Update soft-delete retention policy in days",
+                "tags": [
+                    "Setting"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "days": {
+                                        "type": "integer",
+                                        "minimum": 1
+                                    }
+                                },
+                                "required": [
+                                    "days"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "soft_delete_retention_days": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "soft_delete_retention_days"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "security": [
+                    {
+                        "basicAdmin": []
+                    }
+                ]
+            }
+        },
+        "/branches/{branchId}/services/{serviceId}/slots": {
+            "get": {
+                "operationId": "slot.available",
+                "description": "Endpoint: GET /api/branches/{branch}/services/{service}/slots\nAuth: Public\n\nReturns active slots not already reserved by BOOKED or CHECKED_IN\nappointments. Supports optional `date` filter, optional case-insensitive\n`term` search, and pagination.\n\nResponse shape:\n- `results`: records for the current page\n- `total`: total matching records\n\nResponses:\n- 200: Paginated available slot list",
+                "summary": "List available slots for a branch service",
+                "tags": [
+                    "Slot"
+                ],
+                "parameters": [
+                    {
+                        "name": "branchId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "serviceId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "description": "Filter slots by date (YYYY-MM-DD).",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "2026-03-20"
+                    },
+                    {
+                        "name": "term",
+                        "in": "query",
+                        "description": "Search slot id or assigned staff name/email (case-insensitive).",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "fatima"
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 15
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "results",
+                                        "total"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/manage/slots": {
+            "post": {
+                "operationId": "slot.store",
+                "description": "Endpoint: POST /api/manage/slots\nAuth: BRANCH_MANAGER, ADMIN\n\nAccepts either a single slot payload or a `slots` array for bulk creation.\nValidates branch/service/staff relationships, enforces manager branch scope,\nand records slot creation in the audit log.\n\nResponses:\n- 201: Slot(s) created\n- 403: Forbidden by branch scope rules\n- 422: Validation or relationship constraints failed",
+                "summary": "Create one or more appointment slots",
+                "tags": [
+                    "Slot"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "slots": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "branch_id": {
+                                                    "type": "string"
+                                                },
+                                                "service_type_id": {
+                                                    "type": "string"
+                                                },
+                                                "staff_id": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "start_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "end_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "capacity": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "enum": [
+                                                        "1"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "branch_id",
+                                                "service_type_id",
+                                                "start_at",
+                                                "end_at"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "required": [
+                                    "slots"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "$ref": "#/components/schemas/Slot"
+                                                }
+                                            },
+                                            "required": [
+                                                "data"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/Slot"
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "data"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "null"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Forbidden."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "basicBranchManager": []
+                    },
+                    {
+                        "basicAdmin": []
+                    }
+                ]
+            }
+        },
+        "/manage/slots/{id}": {
+            "put": {
+                "operationId": "slot.update",
+                "description": "Endpoint: PUT /api/manage/slots/{id}\nAuth: BRANCH_MANAGER, ADMIN\n\nApplies partial updates, validates cross-entity consistency, and enforces\nmanager branch scope restrictions.\n\nResponses:\n- 200: Slot updated\n- 403: Forbidden by branch scope rules\n- 404: Slot not found\n- 422: Validation or relationship constraints failed",
+                "summary": "Update an existing slot",
+                "tags": [
+                    "Slot"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "branch_id": {
+                                        "type": "string"
+                                    },
+                                    "service_type_id": {
+                                        "type": "string"
+                                    },
+                                    "staff_id": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "start_at": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "end_at": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "capacity": {
+                                        "type": "integer",
+                                        "enum": [
+                                            "1"
+                                        ]
+                                    },
+                                    "is_active": {
+                                        "type": "boolean"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "data"
+                                            ]
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Forbidden."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "basicBranchManager": []
+                    },
+                    {
+                        "basicAdmin": []
+                    }
+                ]
+            },
+            "delete": {
+                "operationId": "slot.destroy",
+                "description": "Endpoint: DELETE /api/manage/slots/{id}\nAuth: BRANCH_MANAGER, ADMIN\n\nEnforces manager branch scope and records deletion in the audit log.\n\nResponses:\n- 200: Slot soft-deleted\n- 403: Forbidden by branch scope rules\n- 404: Slot not found",
+                "summary": "Soft-delete a slot",
+                "tags": [
+                    "Slot"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Slot soft-deleted."
+                                                }
+                                            },
+                                            "required": [
+                                                "message"
+                                            ]
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Forbidden."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "basicBranchManager": []
+                    },
+                    {
+                        "basicAdmin": []
+                    }
+                ]
+            }
+        },
+        "/admin/slots/trashed": {
+            "get": {
+                "operationId": "slot.trashed",
+                "description": "Endpoint: GET /api/admin/slots/trashed\nAuth: ADMIN\n\nReturns only soft-deleted slots with optional case-insensitive `term`\nsearch and pagination.\n\nResponse shape:\n- `results`: records for the current page\n- `total`: total matching records\n\nResponses:\n- 200: Paginated trashed slot list",
+                "summary": "List soft-deleted slots",
+                "tags": [
+                    "Slot"
+                ],
+                "parameters": [
+                    {
+                        "name": "term",
+                        "in": "query",
+                        "description": "Search by slot id, branch, service, or staff (case-insensitive).",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "muscat"
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 15
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "results",
+                                        "total"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "basicAdmin": []
+                    }
+                ]
+            }
+        },
+        "/manage/staff": {
+            "get": {
+                "operationId": "staff.index",
+                "description": "Endpoint: GET /api/manage/staff\nAuth: BRANCH_MANAGER, ADMIN\n\nBranch managers are scoped to their branch. Supports optional `term`\nfiltering and pagination.\n\nResponse shape:\n- `results`: records for the current page\n- `total`: total matching records\n\nResponses:\n- 200: Paginated staff list with assigned service types",
+                "summary": "List staff and branch managers",
+                "tags": [
+                    "Staff"
+                ],
+                "parameters": [
+                    {
+                        "name": "term",
+                        "in": "query",
+                        "description": "Search staff full name or email (case-insensitive).",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "sarah"
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 15
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "results",
+                                        "total"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "basicBranchManager": []
+                    },
+                    {
+                        "basicAdmin": []
+                    }
+                ]
+            }
+        },
+        "/manage/staff/{id}/assign": {
+            "put": {
+                "operationId": "staff.assign",
+                "description": "Endpoint: PUT /api/manage/staff/{id}/assign\nAuth: BRANCH_MANAGER, ADMIN\n\nBranch managers can only assign within their own branch and to service\ntypes that belong to that branch.\n\nResponses:\n- 200: Assignment updated\n- 403: Forbidden by branch scope rules\n- 404: Staff not found\n- 422: Validation failed",
+                "summary": "Assign branch and/or service types to a staff user",
+                "tags": [
+                    "Staff"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "branch_id": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "service_type_ids": {
+                                        "type": [
+                                            "array",
+                                            "null"
+                                        ],
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Forbidden."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "security": [
+                    {
+                        "basicBranchManager": []
+                    },
+                    {
+                        "basicAdmin": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "basicAuth": {
+                "type": "http",
+                "description": "HTTP Basic credentials for any active user account.",
+                "scheme": "basic"
+            },
+            "basicCustomer": {
+                "type": "http",
+                "description": "Use CUSTOMER account username/password.",
+                "scheme": "basic"
+            },
+            "basicStaff": {
+                "type": "http",
+                "description": "Use STAFF account username/password.",
+                "scheme": "basic"
+            },
+            "basicBranchManager": {
+                "type": "http",
+                "description": "Use BRANCH_MANAGER account username/password.",
+                "scheme": "basic"
+            },
+            "basicAdmin": {
+                "type": "http",
+                "description": "Use ADMIN account username/password.",
+                "scheme": "basic"
+            }
+        },
+        "schemas": {
+            "Slot": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "branch_id": {
+                        "type": "string"
+                    },
+                    "service_type_id": {
+                        "type": "string"
+                    },
+                    "staff_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "start_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "end_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "capacity": {
+                        "type": "integer"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "deleted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "branch_id",
+                    "service_type_id",
+                    "staff_id",
+                    "start_at",
+                    "end_at",
+                    "capacity",
+                    "is_active",
+                    "deleted_at",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "Slot"
+            },
+            "User": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "username": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "full_name": {
+                        "type": "string"
+                    },
+                    "phone": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "role": {
+                        "type": "string"
+                    },
+                    "branch_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "id_image_path": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "username",
+                    "email",
+                    "full_name",
+                    "phone",
+                    "role",
+                    "branch_id",
+                    "id_image_path",
+                    "is_active",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "User"
+            }
+        },
+        "responses": {
+            "ValidationException": {
+                "description": "Validation error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "Errors overview."
+                                },
+                                "errors": {
+                                    "type": "object",
+                                    "description": "A detailed description of each field that failed validation.",
+                                    "additionalProperties": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            },
+                            "required": [
+                                "message",
+                                "errors"
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

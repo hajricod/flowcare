@@ -5,10 +5,33 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Appointment;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\Request;
 
 class ManageAppointmentController extends Controller
 {
+    #[QueryParameter('status', description: 'Filter appointments by status (e.g., BOOKED, CHECKED_IN, COMPLETED, NO_SHOW, CANCELLED ).', type: 'string', required: false, example: 'BOOKED')]
+    #[QueryParameter('term', description: 'Search by status, notes, customer, service, or branch (case-insensitive).', type: 'string', required: false, example: 'booked')]
+    #[QueryParameter('page', description: 'Page number.', type: 'integer', required: false, example: 1)]
+    #[QueryParameter('size', description: 'Number of records per page.', type: 'integer', required: false, example: 15)]
+    /**
+     * List appointments for operational staff views.
+     *
+     * Endpoint: GET /api/manage/appointments
+     * Auth: STAFF, BRANCH_MANAGER, ADMIN
+     *
+     * Branch managers are limited to their branch; staff are limited to their own
+    * assigned appointments. Supports optional `status` of (BOOKED, CHECKED_IN,
+    * COMPLETED, NO_SHOW, CANCELLED), optional case-insensitive `term` search,
+    * and pagination.
+    *
+    * Response shape:
+    * - `results`: records for the current page
+    * - `total`: total matching records
+     *
+     * Responses:
+     * - 200: Paginated managed appointment list
+     */
     public function index(Request $request)
     {
         $user = $request->user();
@@ -24,20 +47,58 @@ class ManageAppointmentController extends Controller
             $query->where('status', $request->status);
         }
 
+        if ($request->filled('term')) {
+            $term = '%' . $request->term . '%';
+            $query->where(function ($q) use ($term) {
+                $q->where('status', 'ilike', $term)
+                    ->orWhere('notes', 'ilike', $term)
+                    ->orWhereHas('customer', fn ($c) => $c
+                        ->where('full_name', 'ilike', $term)
+                        ->orWhere('email', 'ilike', $term)
+                        ->orWhere('username', 'ilike', $term))
+                    ->orWhereHas('branch', fn ($b) => $b->where('name', 'ilike', $term)->orWhere('city', 'ilike', $term))
+                    ->orWhereHas('serviceType', fn ($s) => $s->where('name', 'ilike', $term));
+            });
+        }
+
         $perPage = (int) $request->query('size', 15);
         $results = $query->paginate($perPage, ['*'], 'page', $request->query('page', 1));
-        return response()->json(['data' => $results->items(), 'total' => $results->total()]);
+        return response()->json(['results' => $results->items(), 'total' => $results->total()]);
     }
 
+    /**
+     * Update appointment status by staff/manager/admin.
+     *
+     * Endpoint: PUT /api/manage/appointments/{id}/status
+     * Auth: STAFF, BRANCH_MANAGER, ADMIN
+     *
+     * Allowed statuses: CHECKED_IN, COMPLETED, NO_SHOW.
+     * Enforces branch/staff ownership scope and writes an audit log entry.
+     *
+     * Responses:
+     * - 200: Appointment status updated
+     * - 403: Forbidden by role scope rules
+     * - 404: Appointment not found
+     * - 422: Validation failed
+     */
     public function updateStatus(Request $request, string $id)
     {
         $user = $request->user();
         $validated = $request->validate([
-            'status' => 'required|in:CHECKED_IN,COMPLETED,CANCELLED,NO_SHOW',
+            'status' => 'required|in:CHECKED_IN,COMPLETED,NO_SHOW',
             'notes' => 'nullable|string',
         ]);
 
         $appointment = Appointment::findOrFail($id);
+
+        if ($user->isBranchManager() && $appointment->branch_id !== $user->branch_id) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        if ($user->isStaff() && $appointment->staff_id !== $user->id) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
         $appointment->update($validated);
 
         AuditLog::log($user->id, $user->role, 'APPOINTMENT_STATUS_UPDATED', 'APPOINTMENT', $appointment->id, ['status' => $validated['status']], $appointment->branch_id);

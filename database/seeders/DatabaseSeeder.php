@@ -5,12 +5,14 @@ namespace Database\Seeders;
 use App\Models\AuditLog;
 use App\Models\Branch;
 use App\Models\ServiceType;
+use App\Models\Setting;
 use App\Models\Slot;
 use App\Models\StaffServiceType;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Carbon;
 
 class DatabaseSeeder extends Seeder
 {
@@ -63,13 +65,30 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        // Seed slots
-        foreach ($data['slots'] as $slot) {
+        // Seed slots in the next 3-7 days to keep sample availability fresh.
+        foreach ($data['slots'] as $index => $slot) {
+            $startTemplate = Carbon::parse($slot['start_at']);
+            $endTemplate = Carbon::parse($slot['end_at']);
+            $daysAhead = 3 + ($index % 5);
+            $targetDate = now()->timezone('Asia/Muscat')->startOfDay()->addDays($daysAhead);
+
+            $slot['start_at'] = $targetDate->copy()
+                ->setTime($startTemplate->hour, $startTemplate->minute, 0)
+                ->toIso8601String();
+
+            $slot['end_at'] = $targetDate->copy()
+                ->setTime($endTemplate->hour, $endTemplate->minute, 0)
+                ->toIso8601String();
+
             Slot::updateOrCreate(
                 ['id' => $slot['id']],
                 $slot
             );
         }
+
+        Setting::set('soft_delete_retention_days', '30');
+        Setting::set('max_bookings_per_customer_per_day', '3');
+        Setting::set('max_reschedules_per_appointment_per_day', '2');
 
         // Seed appointments
         foreach ($data['appointments'] as $appointment) {

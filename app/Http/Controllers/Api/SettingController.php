@@ -8,6 +8,19 @@ use Illuminate\Http\Request;
 
 class SettingController extends Controller
 {
+    /**
+     * Update soft-delete retention policy in days.
+     *
+     * Endpoint: PUT /api/admin/settings/retention
+     * Auth: ADMIN
+     *
+     * Request body:
+     * - days (required, integer >= 1)
+     *
+     * Responses:
+     * - 200: Retention setting updated
+     * - 422: Validation failed
+     */
     public function updateRetention(Request $request)
     {
         $validated = $request->validate(['days' => 'required|integer|min:1']);

@@ -4,11 +4,32 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class CustomerController extends Controller
 {
+    #[QueryParameter('term', description: 'Search customer full name, email, or username (case-insensitive).', type: 'string', required: false, example: 'ahmed')]
+    #[QueryParameter('page', description: 'Page number.', type: 'integer', required: false, example: 1)]
+    #[QueryParameter('size', description: 'Number of records per page.', type: 'integer', required: false, example: 15)]
+    /**
+     * List customers for management.
+     *
+     * Endpoint: GET /api/manage/customers
+     * Auth: BRANCH_MANAGER, ADMIN
+     *
+      * Supports optional case-insensitive `term` search across name, email, and
+      * username, with pagination. Includes `id_image_url` for admins when an ID
+      * image is available.
+      *
+      * Response shape:
+      * - `results`: records for the current page
+      * - `total`: total matching records
+     *
+     * Responses:
+     * - 200: Paginated customer list
+     */
     public function index(Request $request)
     {
         $query = User::where('role', 'CUSTOMER');
@@ -22,17 +43,68 @@ class CustomerController extends Controller
             });
         }
 
+        $includeIdImageUrl = $request->user()?->isAdmin() ?? false;
         $perPage = (int) $request->query('size', 15);
         $results = $query->paginate($perPage, ['*'], 'page', $request->query('page', 1));
-        return response()->json(['data' => $results->items(), 'total' => $results->total()]);
+
+        $data = collect($results->items())
+            ->map(function (User $customer) use ($includeIdImageUrl) {
+                $payload = $customer->toArray();
+
+                if (! $includeIdImageUrl) {
+                    return $payload;
+                }
+
+                $payload['id_image_url'] = null;
+                if ($customer->id_image_path && Storage::disk('local')->exists($customer->id_image_path)) {
+                    $payload['id_image_url'] = url("/api/admin/customers/{$customer->id}/id-image");
+                }
+
+                return $payload;
+            })
+            ->values();
+
+        return response()->json(['results' => $data, 'total' => $results->total()]);
     }
 
-    public function show(string $id)
+    /**
+     * Get a single customer profile.
+     *
+     * Endpoint: GET /api/manage/customers/{id}
+     * Auth: BRANCH_MANAGER, ADMIN
+     *
+        * Includes `id_image_url` for admins when an ID image is available.
+     *
+     * Responses:
+     * - 200: Customer found
+     * - 404: Customer not found
+     */
+    public function show(Request $request, string $id)
     {
         $customer = User::where('role', 'CUSTOMER')->findOrFail($id);
-        return response()->json(['data' => $customer]);
+        $isAdmin = $request->user()?->isAdmin() ?? false;
+
+        $data = $customer->toArray();
+        if ($isAdmin) {
+            $data['id_image_url'] = null;
+            if ($customer->id_image_path && Storage::disk('local')->exists($customer->id_image_path)) {
+                $data['id_image_url'] = url("/api/admin/customers/{$customer->id}/id-image");
+            }
+        }
+
+        return response()->json(['data' => $data]);
     }
 
+    /**
+     * Download customer ID image.
+     *
+        * Endpoint: GET /api/admin/customers/{id}/id-image
+        * Auth: ADMIN
+     *
+     * Responses:
+     * - 200: File download
+     * - 404: Customer or ID image not found
+     */
     public function getIdImage(string $id)
     {
         $customer = User::where('role', 'CUSTOMER')->findOrFail($id);
