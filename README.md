@@ -71,6 +71,13 @@ Key relationships:
 ### 2. Run with Docker
 
 ```bash
+docker run --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "$(pwd):/var/www/html" \
+    -w /var/www/html \
+    laravelsail/php84-composer:latest \
+    composer install --ignore-platform-reqs
+
 docker compose up -d --build
 docker compose exec laravel.test php artisan key:generate
 docker compose exec laravel.test php artisan migrate --seed
@@ -149,6 +156,14 @@ wsl --install -d Ubuntu
 git clone https://github.com/hajricod/flowcare.git
 cd flowcare
 cp .env.example .env
+
+docker run --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "$(pwd):/var/www/html" \
+    -w /var/www/html \
+    laravelsail/php84-composer:latest \
+    composer install --ignore-platform-reqs
+
 docker compose up -d --build
 docker compose exec laravel.test php artisan key:generate
 docker compose exec laravel.test php artisan migrate --seed --force
