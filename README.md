@@ -21,7 +21,7 @@ A RESTful API backend built with **Laravel 12** (PHP 8.3) and **PostgreSQL** for
 |-----------|---------|
 | PHP | 8.3 |
 | Laravel | 12.x |
-| PostgreSQL | 16 |
+| PostgreSQL | 18 (Docker Compose) |
 | Docker | 24+ |
 
 ## Quick Start
@@ -29,6 +29,7 @@ A RESTful API backend built with **Laravel 12** (PHP 8.3) and **PostgreSQL** for
 ### Prerequisites
 - Docker & Docker Compose
 - PHP 8.3+ and Composer (for local development)
+- Redis 7+ (for non-Docker local run with default settings)
 
 ### 1. Clone and configure
 
@@ -36,7 +37,6 @@ A RESTful API backend built with **Laravel 12** (PHP 8.3) and **PostgreSQL** for
 git clone https://github.com/hajricod/flowcare.git
 cd flowcare
 cp .env.example .env
-php artisan key:generate
 ```
 
 ## Database Schema
@@ -72,16 +72,23 @@ Key relationships:
 
 ```bash
 docker compose up -d --build
+docker compose exec laravel.test php artisan key:generate
 docker compose exec laravel.test php artisan migrate --seed
 ```
 
 When using Docker Compose, the app, PostgreSQL, Redis, and scheduler services
 start together.
 
-### 3. Run locally (with PostgreSQL running)
+### 3. Run locally (with PostgreSQL and Redis running)
+
+For non-Docker local runs, update `.env` hosts before starting:
+
+- `DB_HOST=127.0.0.1`
+- `REDIS_HOST=127.0.0.1`
 
 ```bash
 composer install
+php artisan key:generate
 php artisan migrate --seed
 php artisan serve
 ```
@@ -166,6 +173,8 @@ This repository includes a Render blueprint in `render.yaml` with:
 Production runtime also uses Redis for cache, queue, and session drivers.
 Provide a Redis instance (external or Render-managed) and set `REDIS_URL`
 for both the web and worker services.
+Note: the current `render.yaml` blueprint provisions PostgreSQL only; it does
+not provision Redis directly.
 
 Deployment steps:
 
@@ -564,19 +573,6 @@ Notes:
 - `queue.end` is sent when the configured stream duration is reached.
 - For long-lived dashboards, reconnect automatically when `queue.end` arrives.
 
-## Database Schema
-
-```
-users           – id (uuid), username, email, password, full_name, phone, role, branch_id, id_image_path, is_active
-branches        – id (uuid), name, city, address, timezone, is_active
-service_types   – id (uuid), branch_id, name, description, duration_minutes, is_active
-slots           – id (uuid), branch_id, service_type_id, staff_id, start_at, end_at, capacity, is_active, deleted_at
-appointments    – id (uuid), customer_id, branch_id, service_type_id, slot_id, staff_id, status, notes, attachment_path, queue_number
-audit_logs      – id (uuid), actor_id, actor_role, action_type, entity_type, entity_id, metadata, branch_id, created_at
-settings        – id, key, value
-staff_service_types – staff_id, service_type_id
-```
-
 ## Roles & Permissions
 
 | Action | CUSTOMER | STAFF | BRANCH_MANAGER | ADMIN |
@@ -596,11 +592,17 @@ staff_service_types – staff_id, service_type_id
 |----------|-------------|---------|
 | `APP_KEY` | Laravel app key | Generate with `php artisan key:generate` |
 | `DB_CONNECTION` | Database driver | `pgsql` |
-| `DB_HOST` | Database host | `127.0.0.1` |
+| `DB_HOST` | Database host | `pgsql` |
 | `DB_PORT` | Database port | `5432` |
 | `DB_DATABASE` | Database name | `flowcare` |
-| `DB_USERNAME` | Database user | `flowcare` |
-| `DB_PASSWORD` | Database password | `secret` |
+| `DB_USERNAME` | Database user | `sail` |
+| `DB_PASSWORD` | Database password | `password` |
+| `SESSION_DRIVER` | Session backend | `redis` |
+| `CACHE_STORE` | Cache backend | `redis` |
+| `QUEUE_CONNECTION` | Queue backend | `redis` |
+| `REDIS_CLIENT` | Redis client | `phpredis` |
+| `REDIS_HOST` | Redis host | `127.0.0.1` |
+| `REDIS_PORT` | Redis port | `6379` |
 
 ## File Storage
 
