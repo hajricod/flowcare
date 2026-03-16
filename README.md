@@ -33,11 +33,40 @@ A RESTful API backend built with **Laravel 12** (PHP 8.3) and **PostgreSQL** for
 ### 1. Clone and configure
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/hajricod/flowcare.git
 cd flowcare
 cp .env.example .env
 php artisan key:generate
 ```
+
+## Database Schema
+
+Schema is managed through Laravel migrations in `database/migrations`.
+
+Core tables:
+
+- `users` (roles: ADMIN, BRANCH_MANAGER, STAFF, CUSTOMER)
+- `branches`
+- `service_types`
+- `staff_service_types` (pivot between staff users and service types)
+- `slots` (bookable times linked to branch/service/staff)
+- `appointments` (linked to customer, branch, slot, service type)
+- `audit_logs` (action trail)
+- `settings` (runtime app limits and retention settings)
+
+Supporting Laravel infrastructure tables:
+
+- `jobs`
+- `cache`
+- `personal_access_tokens`
+
+Key relationships:
+
+- One branch has many staff users and many slots.
+- One service type belongs to one branch and has many slots.
+- Staff users can serve many service types via `staff_service_types`.
+- One slot can be used by at most one active appointment.
+- One customer can have many appointments.
 
 ### 2. Run with Docker
 
