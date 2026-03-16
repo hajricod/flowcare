@@ -9,12 +9,13 @@ use App\Models\Branch;
 class QueueController extends Controller
 {
     /**
-    * Get today's active queue count for a branch.
+    * Get today's live queue number for a branch.
     *
     * Endpoint: GET /api/branches/{branch}/queue
     * Auth: Public
     *
-    * Counts appointments in BOOKED or CHECKED_IN status created today.
+    * Computes a real-time count of active appointments (BOOKED or CHECKED_IN)
+    * created today for the selected branch.
     *
     * Responses:
     * - 200: Branch queue count returned
@@ -25,10 +26,15 @@ class QueueController extends Controller
     public function liveQueue(string $branchId)
     {
         $branch = Branch::findOrFail($branchId);
-        $count = Appointment::where('branch_id', $branch->id)
+        $liveQueueNumber = Appointment::where('branch_id', $branch->id)
             ->whereIn('status', ['BOOKED', 'CHECKED_IN'])
             ->whereDate('created_at', today())
             ->count();
-        return response()->json(['branch_id' => $branch->id, 'active_queue_count' => $count]);
+
+        return response()->json([
+            'branch_id' => $branch->id,
+            'live_queue_number' => $liveQueueNumber,
+            'active_queue_count' => $liveQueueNumber,
+        ]);
     }
 }

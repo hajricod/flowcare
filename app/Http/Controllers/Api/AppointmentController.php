@@ -14,6 +14,8 @@ use Illuminate\Support\Str;
 
 class AppointmentController extends Controller
 {
+    private const ACTIVE_QUEUE_STATUSES = ['BOOKED', 'CHECKED_IN'];
+
     /**
      * Create a new appointment for the authenticated customer.
      *
@@ -40,7 +42,7 @@ class AppointmentController extends Controller
         $slot = Slot::findOrFail($validated['slot_id']);
 
         $existingCount = Appointment::where('slot_id', $slot->id)
-            ->whereIn('status', ['BOOKED', 'CHECKED_IN'])
+            ->whereIn('status', self::ACTIVE_QUEUE_STATUSES)
             ->count();
         if ($existingCount >= 1) {
             return response()->json(['message' => 'Slot is fully booked.'], 422);
@@ -85,7 +87,9 @@ class AppointmentController extends Controller
 
         AuditLog::log($user->id, $user->role, 'APPOINTMENT_BOOKED', 'APPOINTMENT', $appointment->id, null, $slot->branch_id);
 
-        return response()->json(['data' => $appointment->load(['slot', 'serviceType', 'branch', 'staff'])], 201);
+        $appointment = $appointment->load(['slot', 'serviceType', 'branch', 'staff']);
+
+        return response()->json(['data' => $this->toAppointmentPayload($appointment)], 201);
     }
 
     #[QueryParameter('term', description: 'Search by appointment status, notes, service type, or branch (case-insensitive).', type: 'string', required: false, example: 'confirmed')]
@@ -101,6 +105,9 @@ class AppointmentController extends Controller
      * - page (default: 1)
      * - size (default: 15)
     * - term (optional case-insensitive search over status, notes, branch, service)
+    *
+    * Each appointment includes `live_queue_position` (null when not in an active
+    * queue state).
     *
     * Response shape:
     * - `results`: records for the current page
@@ -127,7 +134,12 @@ class AppointmentController extends Controller
 
         $perPage = (int) $request->query('size', 15);
         $results = $query->paginate($perPage, ['*'], 'page', $request->query('page', 1));
-        return response()->json(['results' => $results->items(), 'total' => $results->total()]);
+
+        $payload = collect($results->items())
+            ->map(fn (Appointment $appointment) => $this->toAppointmentPayload($appointment))
+            ->values();
+
+        return response()->json(['results' => $payload, 'total' => $results->total()]);
     }
 
     /**
@@ -137,7 +149,8 @@ class AppointmentController extends Controller
      * Auth: CUSTOMER
      *
      * Returns appointment details and related entities. When an attachment exists,
-     * an `attachment_url` field is included for downloading it.
+    * an `attachment_url` field is included for downloading it. Includes
+    * `live_queue_position` (null when not in an active queue state).
      *
      * Responses:
      * - 200: Appointment found
@@ -150,10 +163,7 @@ class AppointmentController extends Controller
             ->with(['slot', 'serviceType', 'branch', 'staff'])
             ->findOrFail($id);
 
-        $data = $appointment->toArray();
-        if ($appointment->attachment_path) {
-            $data['attachment_url'] = url("/api/appointments/{$id}/attachment");
-        }
+        $data = $this->toAppointmentPayload($appointment);
         return response()->json(['data' => $data]);
     }
 
@@ -176,14 +186,14 @@ class AppointmentController extends Controller
         $user = $request->user();
         $appointment = Appointment::where('customer_id', $user->id)->findOrFail($id);
 
-        if (!in_array($appointment->status, ['BOOKED', 'CHECKED_IN'])) {
+        if (!in_array($appointment->status, self::ACTIVE_QUEUE_STATUSES, true)) {
             return response()->json(['message' => 'Cannot cancel appointment in current status.'], 422);
         }
 
         $appointment->update(['status' => 'CANCELLED']);
         AuditLog::log($user->id, $user->role, 'APPOINTMENT_CANCELLED', 'APPOINTMENT', $appointment->id, null, $appointment->branch_id);
 
-        return response()->json(['data' => $appointment]);
+        return response()->json(['data' => $this->toAppointmentPayload($appointment->fresh())]);
     }
 
     /**
@@ -212,7 +222,7 @@ class AppointmentController extends Controller
 
         $newSlot = Slot::findOrFail($validated['new_slot_id']);
         $existingCount = Appointment::where('slot_id', $newSlot->id)
-            ->whereIn('status', ['BOOKED', 'CHECKED_IN'])
+            ->whereIn('status', self::ACTIVE_QUEUE_STATUSES)
             ->count();
         if ($existingCount >= 1) {
             return response()->json(['message' => 'New slot is fully booked.'], 422);
@@ -235,7 +245,9 @@ class AppointmentController extends Controller
 
         AuditLog::log($user->id, $user->role, 'APPOINTMENT_RESCHEDULED', 'APPOINTMENT', $appointment->id, ['new_slot_id' => $newSlot->id], $appointment->branch_id);
 
-        return response()->json(['data' => $appointment->fresh()->load(['slot', 'serviceType', 'branch', 'staff'])]);
+        $appointment = $appointment->fresh()->load(['slot', 'serviceType', 'branch', 'staff']);
+
+        return response()->json(['data' => $this->toAppointmentPayload($appointment)]);
     }
 
     /**
@@ -286,5 +298,37 @@ class AppointmentController extends Controller
 
         return $sqlState === '23505'
             && str_contains($message, 'appointments_active_slot_unique');
+    }
+
+    private function toAppointmentPayload(Appointment $appointment): array
+    {
+        $data = $appointment->toArray();
+
+        if ($appointment->attachment_path) {
+            $data['attachment_url'] = url("/api/appointments/{$appointment->id}/attachment");
+        }
+
+        $data['live_queue_position'] = $this->calculateLiveQueuePosition($appointment);
+
+        return $data;
+    }
+
+    private function calculateLiveQueuePosition(Appointment $appointment): ?int
+    {
+        if (!in_array($appointment->status, self::ACTIVE_QUEUE_STATUSES, true)) {
+            return null;
+        }
+
+        if (! $appointment->branch_id || ! $appointment->queue_number || ! $appointment->created_at) {
+            return null;
+        }
+
+        $queueDate = $appointment->created_at->toDateString();
+
+        return Appointment::where('branch_id', $appointment->branch_id)
+            ->whereDate('created_at', $queueDate)
+            ->whereIn('status', self::ACTIVE_QUEUE_STATUSES)
+            ->where('queue_number', '<=', $appointment->queue_number)
+            ->count();
     }
 }

@@ -61,7 +61,101 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/components/schemas/Appointment"
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "customer_id": {
+                                                    "type": "string"
+                                                },
+                                                "branch_id": {
+                                                    "type": "string"
+                                                },
+                                                "service_type_id": {
+                                                    "type": "string"
+                                                },
+                                                "slot_id": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "staff_id": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "notes": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "attachment_path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "attachment_original_name": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "queue_number": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "created_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "format": "date-time"
+                                                },
+                                                "attachment_url": {
+                                                    "type": "string"
+                                                },
+                                                "live_queue_position": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "customer_id",
+                                                "branch_id",
+                                                "service_type_id",
+                                                "slot_id",
+                                                "staff_id",
+                                                "status",
+                                                "notes",
+                                                "attachment_path",
+                                                "attachment_original_name",
+                                                "queue_number",
+                                                "created_at",
+                                                "updated_at",
+                                                "attachment_url",
+                                                "live_queue_position"
+                                            ]
                                         }
                                     },
                                     "required": [
@@ -83,7 +177,7 @@
             },
             "get": {
                 "operationId": "appointment.index",
-                "description": "Endpoint: GET /api/appointments\nAuth: CUSTOMER\n\nSupports pagination with query parameters:\n- page (default: 1)\n- size (default: 15)\n- term (optional case-insensitive search over status, notes, branch, service)\n\nResponse shape:\n- `results`: records for the current page\n- `total`: total matching records\n\nResponses:\n- 200: Paginated appointment list with total count",
+                "description": "Endpoint: GET /api/appointments\nAuth: CUSTOMER\n\nSupports pagination with query parameters:\n- page (default: 1)\n- size (default: 15)\n- term (optional case-insensitive search over status, notes, branch, service)\n\nEach appointment includes `live_queue_position` (null when not in an active\nqueue state).\n\nResponse shape:\n- `results`: records for the current page\n- `total`: total matching records\n\nResponses:\n- 200: Paginated appointment list with total count",
                 "summary": "List appointments for the authenticated customer",
                 "tags": [
                     "Appointment"
@@ -128,7 +222,101 @@
                                         "results": {
                                             "type": "array",
                                             "items": {
-                                                "type": "string"
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "customer_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "branch_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "service_type_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "slot_id": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "staff_id": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "status": {
+                                                        "type": "string"
+                                                    },
+                                                    "notes": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "attachment_path": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "attachment_original_name": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "queue_number": {
+                                                        "type": [
+                                                            "integer",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "created_at": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ],
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ],
+                                                        "format": "date-time"
+                                                    },
+                                                    "attachment_url": {
+                                                        "type": "string"
+                                                    },
+                                                    "live_queue_position": {
+                                                        "type": [
+                                                            "integer",
+                                                            "null"
+                                                        ],
+                                                        "minimum": 0
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "customer_id",
+                                                    "branch_id",
+                                                    "service_type_id",
+                                                    "slot_id",
+                                                    "staff_id",
+                                                    "status",
+                                                    "notes",
+                                                    "attachment_path",
+                                                    "attachment_original_name",
+                                                    "queue_number",
+                                                    "created_at",
+                                                    "updated_at",
+                                                    "attachment_url",
+                                                    "live_queue_position"
+                                                ]
                                             }
                                         },
                                         "total": {
@@ -154,7 +342,7 @@
         "/appointments/{id}": {
             "get": {
                 "operationId": "appointment.show",
-                "description": "Endpoint: GET /api/appointments/{id}\nAuth: CUSTOMER\n\nReturns appointment details and related entities. When an attachment exists,\nan `attachment_url` field is included for downloading it.\n\nResponses:\n- 200: Appointment found\n- 404: Appointment not found for the authenticated customer",
+                "description": "Endpoint: GET /api/appointments/{id}\nAuth: CUSTOMER\n\nReturns appointment details and related entities. When an attachment exists,\nan `attachment_url` field is included for downloading it. Includes\n`live_queue_position` (null when not in an active queue state).\n\nResponses:\n- 200: Appointment found\n- 404: Appointment not found for the authenticated customer",
                 "summary": "Get details of a single customer appointment",
                 "tags": [
                     "Appointment"
@@ -178,7 +366,101 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "type": "string"
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "customer_id": {
+                                                    "type": "string"
+                                                },
+                                                "branch_id": {
+                                                    "type": "string"
+                                                },
+                                                "service_type_id": {
+                                                    "type": "string"
+                                                },
+                                                "slot_id": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "staff_id": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "notes": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "attachment_path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "attachment_original_name": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "queue_number": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "created_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "format": "date-time"
+                                                },
+                                                "attachment_url": {
+                                                    "type": "string"
+                                                },
+                                                "live_queue_position": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "customer_id",
+                                                "branch_id",
+                                                "service_type_id",
+                                                "slot_id",
+                                                "staff_id",
+                                                "status",
+                                                "notes",
+                                                "attachment_path",
+                                                "attachment_original_name",
+                                                "queue_number",
+                                                "created_at",
+                                                "updated_at",
+                                                "attachment_url",
+                                                "live_queue_position"
+                                            ]
                                         }
                                     },
                                     "required": [
@@ -221,7 +503,101 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "type": "string"
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "customer_id": {
+                                                    "type": "string"
+                                                },
+                                                "branch_id": {
+                                                    "type": "string"
+                                                },
+                                                "service_type_id": {
+                                                    "type": "string"
+                                                },
+                                                "slot_id": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "staff_id": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "notes": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "attachment_path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "attachment_original_name": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "queue_number": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "created_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "format": "date-time"
+                                                },
+                                                "attachment_url": {
+                                                    "type": "string"
+                                                },
+                                                "live_queue_position": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "customer_id",
+                                                "branch_id",
+                                                "service_type_id",
+                                                "slot_id",
+                                                "staff_id",
+                                                "status",
+                                                "notes",
+                                                "attachment_path",
+                                                "attachment_original_name",
+                                                "queue_number",
+                                                "created_at",
+                                                "updated_at",
+                                                "attachment_url",
+                                                "live_queue_position"
+                                            ]
                                         }
                                     },
                                     "required": [
@@ -303,7 +679,101 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "type": "string"
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "customer_id": {
+                                                    "type": "string"
+                                                },
+                                                "branch_id": {
+                                                    "type": "string"
+                                                },
+                                                "service_type_id": {
+                                                    "type": "string"
+                                                },
+                                                "slot_id": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "staff_id": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "notes": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "attachment_path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "attachment_original_name": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "queue_number": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "created_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "format": "date-time"
+                                                },
+                                                "attachment_url": {
+                                                    "type": "string"
+                                                },
+                                                "live_queue_position": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "customer_id",
+                                                "branch_id",
+                                                "service_type_id",
+                                                "slot_id",
+                                                "staff_id",
+                                                "status",
+                                                "notes",
+                                                "attachment_path",
+                                                "attachment_original_name",
+                                                "queue_number",
+                                                "created_at",
+                                                "updated_at",
+                                                "attachment_url",
+                                                "live_queue_position"
+                                            ]
                                         }
                                     },
                                     "required": [
@@ -1370,8 +1840,8 @@
         "/branches/{branchId}/queue": {
             "get": {
                 "operationId": "queue.liveQueue",
-                "description": "Endpoint: GET /api/branches/{branch}/queue\nAuth: Public\n\nCounts appointments in BOOKED or CHECKED_IN status created today.\n\nResponses:\n- 200: Branch queue count returned\n- 404: Branch not found",
-                "summary": "Get today's active queue count for a branch",
+                "description": "Endpoint: GET /api/branches/{branch}/queue\nAuth: Public\n\nComputes a real-time count of active appointments (BOOKED or CHECKED_IN)\ncreated today for the selected branch.\n\nResponses:\n- 200: Branch queue count returned\n- 404: Branch not found",
+                "summary": "Get today's live queue number for a branch",
                 "tags": [
                     "Queue"
                 ],
@@ -1396,6 +1866,10 @@
                                         "branch_id": {
                                             "type": "string"
                                         },
+                                        "live_queue_number": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                        },
                                         "active_queue_count": {
                                             "type": "integer",
                                             "minimum": 0
@@ -1403,6 +1877,7 @@
                                     },
                                     "required": [
                                         "branch_id",
+                                        "live_queue_number",
                                         "active_queue_count"
                                     ]
                                 }
@@ -2287,92 +2762,6 @@
             }
         },
         "schemas": {
-            "Appointment": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "string"
-                    },
-                    "customer_id": {
-                        "type": "string"
-                    },
-                    "branch_id": {
-                        "type": "string"
-                    },
-                    "service_type_id": {
-                        "type": "string"
-                    },
-                    "slot_id": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "staff_id": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "status": {
-                        "type": "string"
-                    },
-                    "notes": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "attachment_path": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "attachment_original_name": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "queue_number": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
-                    },
-                    "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "updated_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    }
-                },
-                "required": [
-                    "id",
-                    "customer_id",
-                    "branch_id",
-                    "service_type_id",
-                    "slot_id",
-                    "staff_id",
-                    "status",
-                    "notes",
-                    "attachment_path",
-                    "attachment_original_name",
-                    "queue_number",
-                    "created_at",
-                    "updated_at"
-                ],
-                "title": "Appointment"
-            },
             "Slot": {
                 "type": "object",
                 "properties": {
