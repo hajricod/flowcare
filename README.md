@@ -163,19 +163,25 @@ This repository includes a Render blueprint in `render.yaml` with:
 - `flowcare-scheduler` background worker for Laravel scheduler
 - `flowcare-db` PostgreSQL database
 
+Production runtime also uses Redis for cache, queue, and session drivers.
+Provide a Redis instance (external or Render-managed) and set `REDIS_URL`
+for both the web and worker services.
+
 Deployment steps:
 
 1. Push this branch to GitHub.
 2. In Render, create a new Blueprint and point it to the repository.
 3. Review the generated services from `render.yaml`.
 4. Set a valid Laravel `APP_KEY` in both the web and worker services.
-5. After first deploy, open a Render shell and run:
-
+5. Set `REDIS_URL` in both the web and worker services.
+	Example format: `redis://:<password>@<host>:<port>`
+6. Ensure the Redis instance is reachable from both services.
+7. After first deploy, open a Render shell and run:
 ```bash
 php artisan migrate --seed --force
 ```
 
-6. Use the generated Render URL as `APP_URL` if it was not auto-filled.
+8. Use the generated Render URL as `APP_URL` if it was not auto-filled.
 
 Files used for cloud deployment:
 
