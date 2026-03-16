@@ -128,6 +128,44 @@ When running locally via Sail or Docker Compose, open:
 
 ## Deployment
 
+### Deploy on Windows (WSL2)
+
+Use this flow if you develop or deploy from Windows with WSL2.
+
+1. Install WSL2 and Ubuntu (PowerShell as Administrator):
+
+```powershell
+wsl --install -d Ubuntu
+```
+
+2. Install Docker Desktop on Windows and enable:
+
+- Use the WSL2 based engine.
+- WSL integration for your Ubuntu distro.
+
+3. Open Ubuntu (WSL) terminal and run:
+
+```bash
+git clone https://github.com/hajricod/flowcare.git
+cd flowcare
+cp .env.example .env
+docker compose up -d --build
+docker compose exec laravel.test php artisan key:generate
+docker compose exec laravel.test php artisan migrate --seed --force
+```
+
+4. Verify services:
+
+```bash
+docker compose ps
+curl -I http://localhost/up
+```
+
+Notes:
+
+- Run the project from the Linux filesystem in WSL (for example `/home/<user>/flowcare`) for better performance.
+- If port `80` is already used on Windows, set `APP_PORT` in `.env` (for example `APP_PORT=8080`) and reopen `http://localhost:8080`.
+
 ### Docker image
 
 This repository now includes a production Docker image definition in `Dockerfile`.
