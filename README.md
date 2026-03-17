@@ -193,16 +193,34 @@ docker build -t flowcare:latest .
 Run it with environment variables and a reachable PostgreSQL database:
 
 ```bash
+
+# start container (if not running)
 docker run --rm -p 8080:8080 \
 	-e APP_KEY="base64:replace-with-real-key" \
 	-e APP_URL="http://localhost:8080" \
 	-e DB_CONNECTION=pgsql \
-	-e DB_HOST=host.docker.internal \
+	-e DB_HOST=REPLACE_WITH_YOUR_MACHINE_IP \
 	-e DB_PORT=5432 \
 	-e DB_DATABASE=flowcare \
 	-e DB_USERNAME=sail \
 	-e DB_PASSWORD=password \
 	flowcare:latest
+
+# build container
+docker run -d --name flowcare-api -p 8080:8080 \
+  -e APP_KEY="base64:replace-with-real-key" \
+  -e APP_URL="http://localhost:8080" \
+  -e DB_CONNECTION=pgsql \
+  -e DB_HOST=REPLACE_WITH_YOUR_MACHINE_IP \
+  -e DB_PORT=5432 \
+  -e DB_DATABASE=flowcare \
+  -e DB_USERNAME=sail \
+  -e DB_PASSWORD=password \
+  flowcare:latest
+
+# run migrations
+docker exec -it flowcare-api php artisan migrate --force
+
 ```
 
 ### Docker Compose deployment

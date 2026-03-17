@@ -20,7 +20,7 @@ COPY composer.json composer.lock* ./
 RUN composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader --no-scripts
 
 
-FROM php:8.3-cli-alpine AS app
+FROM php:8.4-cli-alpine AS app
 
 WORKDIR /var/www/html
 
@@ -35,6 +35,7 @@ COPY . .
 
 RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache \
+    && rm -f bootstrap/cache/*.php \
     && php artisan package:discover --ansi
 
 ENV APP_ENV=production \
