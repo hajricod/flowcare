@@ -238,6 +238,13 @@ docker run --rm -p 8080:8080 hajricod/flowcare:latest
 For VM-based deployment, copy the project to your server, create `.env`, then run:
 
 ```bash
+docker run --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "$(pwd):/var/www/html" \
+    -w /var/www/html \
+    laravelsail/php84-composer:latest \
+    composer install --ignore-platform-reqs
+	
 docker compose up -d --build
 docker compose exec laravel.test php artisan key:generate
 docker compose exec laravel.test php artisan migrate --seed --force
