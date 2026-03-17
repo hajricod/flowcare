@@ -223,6 +223,16 @@ docker exec -it flowcare-api php artisan migrate --force
 
 ```
 
+### Find Docker image (Docker Hub)
+
+Tag and push the image so others can pull it:
+
+Run the published image with:
+
+```bash
+docker run --rm -p 8080:8080 hajricod/flowcare:latest
+```
+
 ### Docker Compose deployment
 
 For VM-based deployment, copy the project to your server, create `.env`, then run:
