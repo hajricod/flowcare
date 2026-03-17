@@ -9,7 +9,7 @@ A RESTful API backend built with **Laravel 12** (PHP 8.3) and **PostgreSQL** for
 - **Branch management** with service types and time slots
 - **Appointment booking** with queue number assignment
 - **Rate limiting for customers**: daily booking cap and daily reschedule cap
-- **File uploads**: patient ID images and appointment attachments
+- **File uploads**: customer ID images and appointment attachments
 - **Soft-deleted slots** with configurable retention cleanup
 - **Background scheduling service** for automatic retention cleanup
 - **Audit logging** with CSV export
