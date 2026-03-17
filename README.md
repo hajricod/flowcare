@@ -287,9 +287,10 @@ Files used for cloud deployment:
 
 ### Live API URL
 
-A public live API URL cannot be provided directly from this repository alone.
-It is created only after deployment to your cloud account. After you deploy,
-use the generated provider URL as your live API base URL.
+API Server
+- 16.171.18.251
+- docs and testing  [FlowCare API Docs](https://16.171.18.251/docs/api#/)
+- Live queue demo  [FlowCare Queue SSE Demo](https://16.171.18.251/queue-sse-demo)
 
 ### Test endpoints with Try It
 
